@@ -1,0 +1,153 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Fastory Design System — Dark-first premium SaaS palette */
+
+@layer base {
+  :root {
+    --background: 222 47% 6%;
+    --foreground: 210 40% 98%;
+
+    --card: 223 39% 9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 223 39% 11%;
+    --popover-foreground: 210 40% 98%;
+
+    /* Azul eléctrico — color principal */
+    --primary: 220 70% 55%;
+    --primary-foreground: 210 40% 98%;
+
+    /* Gris azulado — secundario */
+    --secondary: 215 20% 16%;
+    --secondary-foreground: 210 40% 90%;
+
+    /* Gris intermedio — muted */
+    --muted: 215 16% 20%;
+    --muted-foreground: 215 16% 57%;
+
+    /* Violeta moderno — acento */
+    --accent: 262 83% 58%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 215 20% 16%;
+    --input: 215 20% 14%;
+    --ring: 220 70% 55%;
+
+    --radius: 0.75rem;
+
+    /* Gradientes de marca */
+    --gradient-brand: linear-gradient(135deg, hsl(220, 70%, 55%), hsl(262, 83%, 58%));
+    --gradient-surface: linear-gradient(135deg, hsl(223, 39%, 9%), hsl(222, 47%, 12%));
+    --gradient-glow: linear-gradient(135deg, hsl(220, 70%, 55%, 0.15), hsl(262, 83%, 58%, 0.15));
+
+    /* Sombras con tono azul */
+    --shadow-soft: 0 4px 20px -4px hsl(220 70% 55% / 0.12);
+    --shadow-medium: 0 8px 30px -6px hsl(220 70% 55% / 0.18);
+    --shadow-glow: 0 0 20px hsl(220 70% 55% / 0.15);
+
+    /* Transiciones suaves */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    --sidebar-background: 222 47% 7%;
+    --sidebar-foreground: 210 40% 90%;
+    --sidebar-primary: 220 70% 55%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 215 20% 14%;
+    --sidebar-accent-foreground: 210 40% 90%;
+    --sidebar-border: 215 20% 14%;
+    --sidebar-ring: 220 70% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  /* Scrollbar personalizada para dark mode */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: hsl(222, 47%, 6%);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(215, 20%, 22%);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(215, 20%, 30%);
+  }
+}
+
+/* Animaciones globales */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 8px hsl(220 70% 55% / 0.2); }
+  50% { box-shadow: 0 0 20px hsl(220 70% 55% / 0.35); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.5s ease-out forwards;
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+/* Utilidades para glassmorphism */
+.glass {
+  background: hsl(223, 39%, 9%, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid hsl(215, 20%, 18%, 0.5);
+}
+
+.glass-card {
+  background: hsl(223, 39%, 10%, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid hsl(215, 20%, 18%, 0.4);
+}
+
+/* Gradient text utility */
+.text-gradient {
+  background: var(--gradient-brand);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glow border effect for inputs on focus */
+.input-glow:focus {
+  box-shadow: 0 0 0 3px hsl(220 70% 55% / 0.15), 0 0 12px hsl(220 70% 55% / 0.1);
+}
