@@ -41,6 +41,7 @@ import {
 
 const formSchema = z.object({
   nombreProveedor: z.string().min(1, { message: "El nombre es obligatorio" }),
+  rucProveedor: z.string().regex(/^\d{0,11}$/, "Solo se permiten hasta 11 dígitos numéricos").optional(),
   telefono: z.string().regex(/^9\d{8}$/, {
     message: "El teléfono debe iniciar con 9 y tener exactamente 9 dígitos",
   }),
@@ -60,6 +61,7 @@ const ManageProveedores = () => {
     reValidateMode: "onChange",
     defaultValues: {
       nombreProveedor: "",
+      rucProveedor: "",
       telefono: "",
     },
   });
@@ -78,6 +80,7 @@ const ManageProveedores = () => {
     try {
       const payload: ProveedorPayload = {
         nombreProveedor: values.nombreProveedor,
+        rucProveedor: values.rucProveedor || "",
         telefono: values.telefono || "",
       };
 
@@ -110,6 +113,7 @@ const ManageProveedores = () => {
   const handleEdit = (proveedor: ProveedorDetalle) => {
     setEditingProveedor(proveedor);
     form.setValue("nombreProveedor", proveedor.nombreProveedor);
+    form.setValue("rucProveedor", proveedor.rucProveedor || "");
     form.setValue("telefono", proveedor.telefono);
     setIsDialogOpen(true);
   };
@@ -218,6 +222,27 @@ const ManageProveedores = () => {
                       />
                       <FormField
                         control={form.control}
+                        name="rucProveedor"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>RUC (Opcional)</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Ej: 10456897125"
+                                maxLength={11}
+                                value={field.value}
+                                onChange={(e) => {
+                                  const onlyDigits = e.target.value.replace(/\D/g, "").slice(0, 11);
+                                  field.onChange(onlyDigits);
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
                         name="telefono"
                         render={({ field }) => (
                           <FormItem>
@@ -269,7 +294,10 @@ const ManageProveedores = () => {
                           {proveedor.nombreProveedor}
                         </h3>
                         <p className="text-sm text-muted-foreground">
-                          {proveedor.telefono || "Sin Telefono"}
+                          RUC: {proveedor.rucProveedor || "N/A"}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Telf: {proveedor.telefono || "Sin Telefono"}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
                           {proveedor.cantidadProductos} producto

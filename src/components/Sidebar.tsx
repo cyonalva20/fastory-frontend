@@ -11,6 +11,7 @@ import {
   History,
   TableOfContents,
   Boxes,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
@@ -111,6 +112,13 @@ const Sidebar = ({ activeSection }: SidebarProps) => {
       path: "/administrar-usuarios",
       allowedRoles: ["Administrador", "ADMINISTRADOR"],
     },
+    {
+      id: "suscripcion",
+      label: "Mi Plan (Suscripción)",
+      icon: CreditCard,
+      path: "/suscripcion",
+      allowedRoles: ["Administrador", "ADMINISTRADOR"],
+    },
   ];
 
   // Filtrar menú basado en el rol
@@ -123,10 +131,13 @@ const Sidebar = ({ activeSection }: SidebarProps) => {
   });
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
     localStorage.removeItem("token");
-    navigate("/auth");
+    localStorage.removeItem("user");
+    navigate("/login");
   };
+
+  const userString = localStorage.getItem("user");
+  const currentUser = userString ? JSON.parse(userString) : null;
 
   const MenuContent = () => (
     <div className="p-5 space-y-1 h-full flex flex-col">
@@ -179,8 +190,18 @@ const Sidebar = ({ activeSection }: SidebarProps) => {
         })}
       </div>
 
-      {/* Logout */}
+      {/* User Profile & Logout */}
       <div className="pt-3 border-t border-border/40">
+        {currentUser && (
+          <div className="px-4 py-2 mb-2 bg-secondary/30 rounded-lg mx-2 border border-border/50">
+            <p className="text-[13px] font-semibold text-foreground truncate">
+              {currentUser.username}
+            </p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
+              {currentUser.rol}
+            </p>
+          </div>
+        )}
         <Button
           variant="ghost"
           onClick={handleLogout}

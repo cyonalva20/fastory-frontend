@@ -11,7 +11,6 @@ export interface ProductPayload {
   stockMinimo: number;
   fechaVencimiento?: string | null;
   perecible: boolean;
-  marca?: string;
   descripcion?: string;
   idUbicacion: number;
 }
@@ -20,7 +19,6 @@ export interface ProductPayload {
 export interface ProductoUpdatePayload {
   nombreProducto: string;
   descripcion?: string;
-  marca?: string; // AÑADIDO
   idCategoria: number;
   precioCompra: number;
   precioVenta: number;
@@ -42,6 +40,7 @@ export interface ProductoInventario {
   stockMinimo: number;
   ubicacion: string;
   proveedor: string;
+  perecible?: boolean;
 }
 
 export interface LoteDetalle {
@@ -57,7 +56,6 @@ export interface ProductoDetalle {
   nombre: string;
   categoria: string;
   idCategoria: number;
-  marca: string;
   descripcion: string;
   precioCompra: number;
   precioVenta: number;

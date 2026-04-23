@@ -68,7 +68,6 @@ const formSchema = z
       .min(0, { message: "El stock mínimo no puede ser negativo" }),
     fechaVencimiento: z.date().optional(),
     noPerecible: z.boolean().optional().default(false),
-    marca: z.string().optional(),
     descripcion: z.string().optional(),
   })
   .refine(
@@ -94,16 +93,15 @@ const NewProduct = () => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       nombreProducto: "",
-      precioCompra: 0,
-      precioVenta: 0,
+      precioCompra: "" as any,
+      precioVenta: "" as any,
       unidadMedida: "",
       idCategoria: "",
       idProveedor: "",
-      stock: 0,
-      stockMinimo: 0,
+      stock: "" as any,
+      stockMinimo: "" as any,
       fechaVencimiento: undefined,
       noPerecible: false,
-      marca: "",
       descripcion: "",
     },
   });
@@ -157,7 +155,6 @@ const NewProduct = () => {
         unidadMedida: values.unidadMedida,
         stock: values.stock,
         stockMinimo: values.stockMinimo,
-        marca: values.marca || "",
         descripcion: values.descripcion || "",
         idCategoria: parseInt(values.idCategoria),
         idProveedor: parseInt(values.idProveedor),
@@ -216,26 +213,13 @@ const NewProduct = () => {
                     control={form.control}
                     name="nombreProducto"
                     render={({ field }) => (
-                      <FormItem className="md:col-span-2">
+                      <FormItem className="md:col-span-3">
                         <FormLabel>Nombre del producto *</FormLabel>
                         <FormControl>
                           <Input
                             placeholder="Ej: Harina integral"
                             {...field}
                           />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="marca"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Marca (opcional)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Ej: La Universal" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

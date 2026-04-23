@@ -6,6 +6,7 @@ import { apiRequest } from "./apiClient";
 export interface ProveedorDetalle {
   idProveedor: number;
   nombreProveedor: string;
+  rucProveedor: string;
   telefono: string;
   cantidadProductos: number;
 }
@@ -15,11 +16,13 @@ export interface ProveedorDetalle {
  */
 export interface ProveedorPayload {
   nombreProveedor: string;
+  rucProveedor: string;
   telefono: string;
 }
 export interface Proveedor {
   idProveedor: number;
   nombreProveedor: string;
+  rucProveedor: string;
   telefono: string;
 }
 

@@ -96,31 +96,12 @@ const formSchema = z.object({
 
 // --- ESQUEMAS PARA DEVOLUCIONES ---
 const solicitudFormSchema = z.object({
-  fechaRecepcion: z
-    .string()
-    .min(1, { message: "Debe seleccionar una fecha" })
-    .refine(
-      (date) => {
-        const selectedDate = new Date(date + "T00:00:00");
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        return selectedDate > today;
-      },
-      { message: "La fecha debe ser posterior al día actual" }
-    ),
-  horaRecepcion: z
-    .string()
-    .min(1, { message: "Debe seleccionar una hora" })
-    .refine(
-      (time) => {
-        const [hours, minutes] = time.split(":").map(Number);
-        const totalMinutes = hours * 60 + minutes;
-        const minMinutes = 6 * 60; // 06:00
-        const maxMinutes = 22 * 60; // 22:00
-        return totalMinutes >= minMinutes && totalMinutes <= maxMinutes;
-      },
-      { message: "La hora debe estar en el horario de recepción, entre 6:00 am y 10:00 pm" }
-    ),
+  idProveedor: z.string().min(1, { message: "Debe seleccionar un proveedor" }),
+  cantidad: z.coerce
+    .number()
+    .positive({ message: "La cantidad debe ser mayor a cero" }),
+  motivo: z.string().optional(),
+  fechaEntrega: z.string().optional(),
 });
 
 // --- INTERFACES LOCALES ---
@@ -296,8 +277,9 @@ const RegisterSalesOutput = () => {
   const solicitudForm = useForm<z.infer<typeof solicitudFormSchema>>({
     resolver: zodResolver(solicitudFormSchema),
     defaultValues: {
-      fechaRecepcion: "",
-      horaRecepcion: "",
+      idProveedor: "",
+      motivo: "",
+      fechaEntrega: "",
     },
   });
 
@@ -529,15 +511,25 @@ const RegisterSalesOutput = () => {
         return;
     }
 
-    const payload: DevolucionCreatePayload = {
-      idProducto: productDetails.idProducto,
-      idLote: selectedLote.idLote,
-      cantidad: selectedLote.cantidad,
-      fechaRecepcion: values.fechaRecepcion,
-      horaRecepcion: values.horaRecepcion + ":00",
-    };
+    try {
+      if (values.cantidad > selectedLote.cantidad) {
+        toast.error("La cantidad a devolver no puede exceder la cantidad del lote");
+        return;
+      }
 
-    registrarDevolucionMutation.mutate(payload);
+      const payload: DevolucionCreatePayload = {
+        idProducto: productDetails.idProducto,
+        idLote: selectedLote.idLote,
+        cantidad: values.cantidad,
+        idProveedor: parseInt(values.idProveedor, 10),
+        motivo: values.motivo || undefined,
+        fechaEntrega: values.fechaEntrega || new Date().toISOString().split("T")[0],
+      };
+
+      registrarDevolucionMutation.mutate(payload);
+    } catch (e) {
+        toast.error("Error al procesar los datos");
+    }
   };
 
   // Encontrar info del proveedor
@@ -1057,12 +1049,9 @@ const RegisterSalesOutput = () => {
                           const isVencido =
                             fechaVenc && fechaVenc < hoy;
                           
-                          // El botón se habilita solo si:
-                          // 1. El producto es perecible
-                          // 2. El lote tiene fecha de vencimiento
-                          // 3. La fecha de vencimiento es anterior a hoy (está vencido)
-                          const canSolicitarDevolucion = 
-                            productDetails.perecible && fechaVenc && isVencido;
+                          // El botón se habilita siempre si el producto tiene lotes disponibles, ya que se puede
+                          // devolver por mal estado o vencimiento según la nueva regla de negocio.
+                          const canSolicitarDevolucion = true;
                           
                           return (
                             <TableRow key={lote.codigoLote}>
@@ -1086,9 +1075,12 @@ const RegisterSalesOutput = () => {
                               <TableCell className="text-right">
                                 <Button
                                   size="sm"
-                                  onClick={() => handleSolicitarDevolucion(lote)}
+                                  onClick={() => {
+                                    handleSolicitarDevolucion(lote);
+                                    solicitudForm.setValue("cantidad", lote.cantidad);
+                                  }}
                                   disabled={!canSolicitarDevolucion}
-                                  variant={isVencido ? "destructive" : "default"}
+                                  variant={"default"}
                                 >
                                   Solicitar Devolución
                                 </Button>
@@ -1175,30 +1167,78 @@ const RegisterSalesOutput = () => {
               </div>
             )}
 
-            {/* Formulario de Fecha y Hora */}
+            {/* Formulario Nuevo de Devolución */}
             <Form {...solicitudForm}>
               <form className="space-y-4">
                 <FormField
                   control={solicitudForm.control}
-                  name="fechaRecepcion"
+                  name="idProveedor"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Fecha de Recepción *</FormLabel>
+                      <FormLabel>Proveedor *</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="h-11">
+                            <SelectValue placeholder="Seleccione el proveedor" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {proveedores?.map((p) => (
+                            <SelectItem key={p.idProveedor} value={p.idProveedor.toString()}>
+                              {p.nombreProveedor}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={solicitudForm.control}
+                  name="cantidad"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cantidad a devolver *</FormLabel>
                       <FormControl>
-                        <Input type="date" className="h-11" {...field} />
+                        <Input
+                          type="number"
+                          min={1}
+                          max={selectedLote?.cantidad || 1}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
                 <FormField
                   control={solicitudForm.control}
-                  name="horaRecepcion"
+                  name="motivo"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Hora de Recepción *</FormLabel>
+                      <FormLabel>Motivo de la devolución (Opcional)</FormLabel>
                       <FormControl>
-                        <Input type="time" className="h-11" {...field} />
+                        <Input placeholder="Ej. Producto dañado..." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={solicitudForm.control}
+                  name="fechaEntrega"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Fecha de Entrega (Opcional)</FormLabel>
+                      <FormControl>
+                        <Input type="date" className="h-11" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

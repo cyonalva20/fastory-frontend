@@ -43,18 +43,6 @@ export interface MovimientoHistorialSalida {
   totalGeneral: number;
 }
 
-// --- ENTRADAS
-
-/**
- * Representa un producto filtrado por proveedor.
- * (Backend: ProductoPorProveedorDto)
- */
-export interface ProductoPorProveedorDto {
-  idProducto: number;
-  nombreProducto: string;
-  esPerecible: boolean;
-}
-
 /**
  * Detalle individual en el historial de movimientos.
  * (Backend: DetalleHistorialDto)
@@ -175,18 +163,6 @@ export const MovimientoService = {
           Authorization: `Bearer ${token}`,
         },
       }
-    );
-  },
-
-  /**
-   * Obtiene los productos asociados a un proveedor específico.
-   * GET /api/v1/movimientos/productos/proveedor/{idProveedor}
-   */
-  getProductosPorProveedor: (
-    idProveedor: number
-  ): Promise<ProductoPorProveedorDto[]> => {
-    return apiRequest<ProductoPorProveedorDto[]>(
-      `/api/v1/movimientos/productos/proveedor/${idProveedor}`
     );
   },
 
