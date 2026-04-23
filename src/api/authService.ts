@@ -5,6 +5,7 @@ export interface AuthResponse {
   message?: string;
   rol?: string;
   idUsuario?: number;
+  idEmpresa?: number;
 }
 
 export const AuthService = {
@@ -34,6 +35,7 @@ export const AuthService = {
             id: response.idUsuario,
             username: username,
             rol: response.rol,
+            idEmpresa: response.idEmpresa,
           };
           localStorage.setItem("user", JSON.stringify(userData));
         }
@@ -95,7 +97,7 @@ export const AuthService = {
   /**
    * Obtiene la información del usuario actual
    */
-  getCurrentUser: (): { id: number; username: string; rol: string } | null => {
+  getCurrentUser: (): { id: number; username: string; rol: string; idEmpresa?: number } | null => {
     const userString = localStorage.getItem("user");
     if (!userString) return null;
 
