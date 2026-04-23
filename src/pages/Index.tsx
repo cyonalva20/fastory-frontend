@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useRol } from "../hooks/useRol";
 import Sidebar from "../components/Sidebar";
 import { Input } from "../components/ui/input";
 import {
@@ -79,6 +80,7 @@ const Index = () => {
   const [userName, setUserName] = useState("");
   const [userId, setUserId] = useState<number | null>(null);
   const [userRol, setUserRol] = useState<string | null>(null);
+  const { isReadOnly } = useRol();
 
   // Estados de Datos
   const [products, setProducts] = useState<ProductoInventario[]>([]);
@@ -128,7 +130,6 @@ const Index = () => {
   const [editForm, setEditForm] = useState({
     nombreProducto: "",
     descripcion: "",
-    marca: "",
     idCategoria: 0,
     precioCompra: 0,
     precioVenta: 0,
@@ -364,7 +365,6 @@ const Index = () => {
       setEditForm({
         nombreProducto: data.nombre,
         descripcion: data.descripcion || "",
-        marca: data.marca || "",
         idCategoria: data.idCategoria,
         precioCompra: data.precioCompra,
         precioVenta: data.precioVenta,
@@ -390,10 +390,6 @@ const Index = () => {
       errors.nombreProducto = "El nombre es obligatorio";
     } else if (editForm.nombreProducto.length > 100) {
       errors.nombreProducto = "El nombre no debe superar 100 caracteres";
-    }
-
-    if (editForm.marca && editForm.marca.length > 100) {
-      errors.marca = "La marca no debe superar 100 caracteres";
     }
 
     if (editForm.descripcion && editForm.descripcion.length > 500) {
@@ -448,7 +444,6 @@ const Index = () => {
       const payload: ProductoUpdatePayload = {
         nombreProducto: editForm.nombreProducto.trim(),
         descripcion: editForm.descripcion.trim() || undefined,
-        marca: editForm.marca.trim() || undefined,
         idCategoria: editForm.idCategoria,
         precioCompra: editForm.precioCompra,
         precioVenta: editForm.precioVenta,
@@ -620,12 +615,6 @@ const Index = () => {
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Marca</p>
-                        <p className="font-medium">
-                          {selectedProductDetail.marca ?? "N/A"}
-                        </p>
-                      </div>
-                      <div>
                         <p className="text-xs text-muted-foreground">
                           Proveedor
                         </p>
@@ -743,7 +732,7 @@ const Index = () => {
             </Dialog>
 
             {/* 🔹 CONDICIONAL PARA EL BOTÓN MODIFICAR */}
-            {(userRol === "Administrador" || userRol === "ADMINISTRADOR") && (
+            {!isReadOnly && (userRol === "Administrador" || userRol === "ADMINISTRADOR") && (
               <Button
                 size="sm"
                 variant="outline"
@@ -1023,24 +1012,6 @@ const Index = () => {
                   {formErrors.nombreProducto && (
                     <p className="text-sm text-destructive">
                       {formErrors.nombreProducto}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="edit-marca">Marca</Label>
-                  <Input
-                    id="edit-marca"
-                    value={editForm.marca}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm, marca: e.target.value })
-                    }
-                    placeholder="Ej: Costeño"
-                    className={formErrors.marca ? "border-destructive" : ""}
-                  />
-                  {formErrors.marca && (
-                    <p className="text-sm text-destructive">
-                      {formErrors.marca}
                     </p>
                   )}
                 </div>

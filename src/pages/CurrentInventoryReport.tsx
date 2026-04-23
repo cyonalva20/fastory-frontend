@@ -21,7 +21,6 @@ interface ReporteInventarioItem {
     codigo: string;
     nombreProducto: string;
     categoria: string;
-    marca: string;
     ubicacion: string;
     stockDisponible: number; // 🔹 CORREGIDO: Debe coincidir con el backend
     stockMinimo: number;
@@ -29,14 +28,13 @@ interface ReporteInventarioItem {
     estado: string;
 }
 
-type SortField = "nombreProducto" | "categoria" | "marca" | "stockDisponible" | "stockMinimo" | "ubicacion";
+type SortField = "nombreProducto" | "categoria" | "stockDisponible" | "stockMinimo" | "ubicacion";
 
 const CurrentInventoryReport = () => {
     const navigate = useNavigate();
     
     // Filtros
     const [selectedCategory, setSelectedCategory] = useState("Todas");
-    const [searchMarca, setSearchMarca] = useState("");
     const [showLowStock, setShowLowStock] = useState(false);
     
     // Data
@@ -74,11 +72,6 @@ const CurrentInventoryReport = () => {
                     queryParams.append("categoriaId", selectedCategory);
                 }
                 
-                // Filtro Marca
-                if (searchMarca.trim()) {
-                    queryParams.append("marca", searchMarca.trim());
-                }
-                
                 // 🔹 NO enviamos stockBajoMinimo al backend - filtraremos en el frontend
 
                 const data = await apiRequest<ReporteInventarioItem[]>(
@@ -101,7 +94,7 @@ const CurrentInventoryReport = () => {
         }, 500);
 
         return () => clearTimeout(timeoutId);
-    }, [selectedCategory, searchMarca]); // 🔹 showLowStock NO está aquí - solo filtra en el frontend
+    }, [selectedCategory]); // 🔹 showLowStock NO está aquí - solo filtra en el frontend
 
     // 🔹 Filtrado de stock bajo en el frontend
     const filteredProducts = showLowStock 
@@ -155,7 +148,6 @@ const CurrentInventoryReport = () => {
         const tableData = sortedProducts.map((product) => [
             product.nombreProducto,
             product.categoria,
-            product.marca || "-",
             product.ubicacion || "Sin asignar",
             product.stockDisponible.toString(), // 🔹 CORREGIDO
             product.stockMinimo.toString(),
@@ -163,7 +155,7 @@ const CurrentInventoryReport = () => {
 
         autoTable(doc, {
             startY: 42,
-            head: [["Producto", "Categoría", "Marca", "Ubicación", "Stock", "Mín."]],
+            head: [["Producto", "Categoría", "Ubicación", "Stock", "Mín."]],
             body: tableData,
             styles: {
                 fontSize: 9,
@@ -243,16 +235,6 @@ const CurrentInventoryReport = () => {
                                         </Select>
                                     </div>
 
-                                    {/* Marca */}
-                                    <div className="space-y-2">
-                                        <Label>Marca</Label>
-                                        <Input
-                                            placeholder="Buscar por marca..."
-                                            value={searchMarca}
-                                            onChange={(e) => setSearchMarca(e.target.value)}
-                                        />
-                                    </div>
-
                                     {/* Stock Bajo */}
                                     <div className="flex items-center space-x-3 h-10 pb-1">
                                         <Switch
@@ -281,11 +263,6 @@ const CurrentInventoryReport = () => {
                                         <TableHead>
                                             <Button variant="ghost" onClick={() => handleSort("categoria")} className="h-8 p-0 font-bold hover:bg-transparent">
                                                 Categoría <ArrowUpDown className="ml-2 h-3 w-3" />
-                                            </Button>
-                                        </TableHead>
-                                        <TableHead>
-                                            <Button variant="ghost" onClick={() => handleSort("marca")} className="h-8 p-0 font-bold hover:bg-transparent">
-                                                Marca <ArrowUpDown className="ml-2 h-3 w-3" />
                                             </Button>
                                         </TableHead>
                                         <TableHead>
@@ -326,7 +303,6 @@ const CurrentInventoryReport = () => {
                                             <TableRow key={p.idProducto} className="hover:bg-muted/30">
                                                 <TableCell className="font-medium">{p.nombreProducto}</TableCell>
                                                 <TableCell>{p.categoria}</TableCell>
-                                                <TableCell>{p.marca || "-"}</TableCell>
                                                 <TableCell>
                                                     <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-secondary text-secondary-foreground">
                                                         {p.ubicacion || "Sin Asignar"}

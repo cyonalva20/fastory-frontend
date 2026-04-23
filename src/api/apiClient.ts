@@ -16,6 +16,8 @@ export type ApiError = UbicacionOcupadaError | { message: string };
 // 🔸 Lista de endpoints que NO deben incluir token automáticamente
 const PUBLIC_ENDPOINTS = ["/auth/login", "/auth/register"];
 
+import { toast } from "sonner";
+
 export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -47,26 +49,39 @@ export async function apiRequest<T>(
   };
 
   // ✅ CORRECCIÓN DE DOBLE BARRA (//)
-  // 1. Quitamos la barra final de la URL base si existe
   const cleanBaseUrl = API_BASE_URL.replace(/\/$/, "");
-  // 2. Quitamos la barra inicial del endpoint si existe
   const cleanEndpoint = endpoint.replace(/^\//, "");
-  // 3. Unimos con una única barra
   const finalUrl = `${cleanBaseUrl}/${cleanEndpoint}`;
 
   try {
-    // Console log opcional para que verifiques en el navegador que la URL es correcta
     console.log("📡 Enviando petición a:", finalUrl);
 
     const response = await fetch(finalUrl, config);
 
-    // Manejo de sesión expirada (401/403)
-    // EXCEPCIÓN: No redirigir si el error viene del endpoint de login (credenciales inválidas)
-    if ((response.status === 401 || response.status === 403) && !endpoint.includes("/auth/login")) {
-      localStorage.removeItem("token");
-      window.location.href = "/auth";
-      throw new Error("Sesión expirada. Por favor inicie sesión nuevamente.");
+    // --- INTERCEPTOR GLOBAL DE ERRORES HTTP ---
+    if (!response.ok && !endpoint.includes("/auth/login")) {
+      if (response.status === 402) {
+        // Redirigir al portal de suscripción inmediatamente
+        window.location.href = "/suscripcion";
+        throw new Error("Suscripción Vencida. Redirigiendo...");
+      }
+
+      if (response.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/auth";
+        throw new Error("Sesión expirada. Por favor inicie sesión nuevamente.");
+      }
+
+      if (response.status === 403) {
+        toast.error("Acceso denegado: No tienes permisos suficientes.");
+      }
+
+      if (response.status >= 500) {
+        toast.error("Error interno del servidor. Intente más tarde.");
+      }
     }
+
 
     // Si la respuesta es exitosa
     if (response.ok) {

@@ -18,6 +18,7 @@ import ManageUsers from "./pages/ManageUsers";
 import CurrentInventoryReport from "./pages/CurrentInventoryReport";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
+import SubscriptionPanel from "./pages/SubscriptionPanel";
 
 const queryClient = new QueryClient();
 
@@ -34,23 +35,32 @@ const App = () => (
 
           {/* --- RUTAS PROTEGIDAS (Requieren Login) --- */}
           
-          {/* Nivel 1: Acceso General (Administrador y Vendedor) */}
+          {/* Nivel 1: Acceso Universal (Admin, Vendedor, Supervisor, Almacenero) */}
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Index />} /> {/* Panel Principal */}
-            <Route path="/salidas" element={<RegisterSalesOutput />} />
+            <Route path="/suscripcion" element={<SubscriptionPanel />} />
           </Route>
 
-          {/* Nivel 2: Acceso Exclusivo (Solo Administrador) */}
+          {/* Módulos Operativos (Admin, Almacenero, Vendedor) */}
+          <Route element={<ProtectedRoute allowedRoles={["Administrador", "ADMINISTRADOR", "ALMACENERO", "VENDEDOR", "SUPERVISOR"]} />}>
+            <Route path="/salidas" element={<RegisterSalesOutput />} />
+            <Route path="/entradas" element={<RegisterSupplierInput />} />
+            <Route path="/movimientos" element={<Movements />} />
+          </Route>
+
+          {/* Módulos Analíticos (Admin, Supervisor) */}
+          <Route element={<ProtectedRoute allowedRoles={["Administrador", "ADMINISTRADOR", "SUPERVISOR"]} />}>
+            <Route path="/reportes" element={<InventoryReport />} />
+            <Route path="/reporte-inventario-actual" element={<CurrentInventoryReport />} />
+            <Route path="/revision-inventario" element={<InventoryReview />} />
+          </Route>
+
+          {/* Módulos Administrativos y Configuración (Solo Administrador) */}
           <Route element={<ProtectedRoute allowedRoles={["Administrador", "ADMINISTRADOR"]} />}>
             <Route path="/nuevo-producto" element={<NewProduct />} />
-            <Route path="/entradas" element={<RegisterSupplierInput />} />
             <Route path="/administrar-categorias" element={<ManageCategories />} />
             <Route path="/administrar-proveedores" element={<ManageProveedores />} />
-            <Route path="/reportes" element={<InventoryReport />} />
-            <Route path="/revision-inventario" element={<InventoryReview />} />
-            <Route path="/movimientos" element={<Movements />} />
             <Route path="/administrar-usuarios" element={<ManageUsers />} />
-            <Route path="/reporte-inventario-actual" element={<CurrentInventoryReport />} />
           </Route>
 
           {/* Ruta por defecto para URLs no encontradas */}

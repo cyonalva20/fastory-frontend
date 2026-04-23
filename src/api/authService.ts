@@ -5,6 +5,17 @@ export interface AuthResponse {
   message?: string;
   rol?: string;
   idUsuario?: number;
+  idEmpresa?: number;
+}
+
+export interface RegistroRequest {
+  nombreEmpresa: string;
+  ruc: string;
+  username: string;
+  password: string;
+  nombre: string;
+  apellido: string;
+  email: string;
 }
 
 export const AuthService = {
@@ -34,6 +45,7 @@ export const AuthService = {
             id: response.idUsuario,
             username: username,
             rol: response.rol,
+            idEmpresa: response.idEmpresa,
           };
           localStorage.setItem("user", JSON.stringify(userData));
         }
@@ -49,16 +61,13 @@ export const AuthService = {
   },
 
   /**
-   * Registra un nuevo usuario
+   * Registra un nuevo usuario y empresa (Onboarding)
    */
-  register: async (
-    username: string,
-    password: string
-  ): Promise<AuthResponse> => {
+  register: async (payload: RegistroRequest): Promise<AuthResponse> => {
     try {
       const response = await apiRequest<AuthResponse>("/auth/register", {
         method: "POST",
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify(payload),
       });
 
       return response;
@@ -95,7 +104,7 @@ export const AuthService = {
   /**
    * Obtiene la información del usuario actual
    */
-  getCurrentUser: (): { id: number; username: string; rol: string } | null => {
+  getCurrentUser: (): { id: number; username: string; rol: string; idEmpresa?: number } | null => {
     const userString = localStorage.getItem("user");
     if (!userString) return null;
 

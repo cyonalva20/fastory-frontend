@@ -5,8 +5,9 @@ export interface DevolucionCreatePayload {
   idProducto: number;
   idLote: number; // El backend requiere el ID, no el código
   cantidad: number;
-  fechaRecepcion: string; // Java LocalDate: "YYYY-MM-DD"
-  horaRecepcion: string;  // Java LocalTime: "HH:mm" o "HH:mm:ss"
+  idProveedor: number;
+  motivo?: string;
+  fechaEntrega?: string; // YYYY-MM-DD
 }
 
 // Coincide con Java: DevolucionListDto

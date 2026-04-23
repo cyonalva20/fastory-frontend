@@ -83,6 +83,16 @@ const ManageUsers = () => {
     }
   };
 
+  const currentUserString = localStorage.getItem("user");
+  const currentUser = currentUserString ? JSON.parse(currentUserString) : null;
+
+  const filteredRoles = roles.filter(role => {
+    if (currentUser?.rol === "ADMINISTRADOR" && role.nombreRol === "ADMINISTRADOR") {
+      return false;
+    }
+    return true;
+  });
+
   const filteredUsers = users.filter(
     (user) =>
       user.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -342,7 +352,7 @@ const ManageUsers = () => {
                                 <SelectValue placeholder="Seleccionar rol" />
                               </SelectTrigger>
                               <SelectContent>
-                                {roles.map((role) => (
+                                {filteredRoles.map((role) => (
                                   <SelectItem
                                     key={role.idRol}
                                     value={role.idRol.toString()}

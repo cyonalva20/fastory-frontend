@@ -35,10 +35,10 @@ import Sidebar from "@/components/Sidebar";
 import { ProveedorService } from "@/api/proveedorService";
 import {
   MovimientoService,
-  ProductoPorProveedorDto,
   MovimientoHistorialDto,
   RegistroEntradaDto,
 } from "@/api/movimientoService";
+import { ProductService } from "@/api/productService";
 
 // --- TIPOS DE DATOS ---
 
@@ -48,8 +48,12 @@ interface ProveedorSimple {
   nombre: string;
 }
 
-// Para el estado de un producto seleccionado (basado en ProductoPorProveedorDto)
-type ProductoProveedor = ProductoPorProveedorDto;
+// Para el estado de un producto seleccionado
+interface ProductoProveedor {
+  idProducto: number;
+  nombreProducto: string;
+  esPerecible: boolean;
+}
 
 // Para la lista de productos agregados (listos para enviar)
 interface ProductoAgregado {
@@ -130,38 +134,33 @@ const RegisterSupplierInput = () => {
     }
   };
 
-  // Cargar productos (depende del proveedor)
-  const fetchProductos = async (supplierId: string) => {
-    if (!supplierId) {
-      setProductos([]);
-      return;
-    }
+  // Cargar todos los productos disponibles
+  const fetchProductos = async () => {
     try {
-      const data = await MovimientoService.getProductosPorProveedor(
-        Number(supplierId)
-      );
-      setProductos(data);
+      const data = await ProductService.getInventario({});
+      const mapped = data.map(p => ({
+        idProducto: p.idProducto,
+        nombreProducto: p.nombre,
+        esPerecible: p.perecible || false
+      }));
+      setProductos(mapped);
     } catch (error) {
-      toast.error("Error al cargar productos del proveedor.");
+      toast.error("Error al cargar catálogo de productos.");
     }
   };
 
   // --- EFECTOS ---
 
-  // Cargar proveedores e historial al montar
+  // Cargar proveedores, historial y productos al montar
   useEffect(() => {
     fetchProveedores();
     fetchHistorial();
+    fetchProductos();
   }, []);
 
-  // Cargar productos cuando cambia el proveedor seleccionado
+  // Resetear producto seleccionado al cambiar de proveedor
   useEffect(() => {
-    if (selectedSupplierId) {
-      fetchProductos(selectedSupplierId);
-    } else {
-      setProductos([]);
-    }
-    setSelectedProduct(null); // Resetear producto seleccionado
+    setSelectedProduct(null);
   }, [selectedSupplierId]);
 
   // --- MANEJADORES DE EVENTOS ---
