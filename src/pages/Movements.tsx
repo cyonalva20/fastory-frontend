@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
+import { useRol } from "@/hooks/useRol";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,6 +59,7 @@ import { MovimientoService, MovimientoHistorialDto, ProductoBusqueda, Movimiento
 import { UserService, UserDto } from "@/api/userService";
 
 const Movements = () => {
+  const { isReadOnly } = useRol();
   // --- Estados de Filtros y Datos ---
   const [movements, setMovements] = useState<MovimientoHistorialDto[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -349,8 +351,12 @@ const Movements = () => {
                             <TableCell>{mov.nombreUsuario}</TableCell>
                             <TableCell className="text-center">
                               <div className="flex justify-center gap-2">
-                                <Button variant="outline" size="sm" onClick={() => handleOpenEdit(mov)}><Edit className="h-4 w-4 mr-1"/> Modificar</Button>
-                                <Button variant="destructive" size="sm" onClick={() => { setMovementToDelete(mov.idMovimiento); setDeleteDialogOpen(true); }}><Trash2 className="h-4 w-4 mr-1"/> Eliminar</Button>
+                                {!isReadOnly && (
+                                  <>
+                                    <Button variant="outline" size="sm" onClick={() => handleOpenEdit(mov)}><Edit className="h-4 w-4 mr-1"/> Modificar</Button>
+                                    <Button variant="destructive" size="sm" onClick={() => { setMovementToDelete(mov.idMovimiento); setDeleteDialogOpen(true); }}><Trash2 className="h-4 w-4 mr-1"/> Eliminar</Button>
+                                  </>
+                                )}
                               </div>
                             </TableCell>
                           </TableRow>

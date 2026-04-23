@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useRol } from "../hooks/useRol";
 import Sidebar from "../components/Sidebar";
 import { Input } from "../components/ui/input";
 import {
@@ -79,6 +80,7 @@ const Index = () => {
   const [userName, setUserName] = useState("");
   const [userId, setUserId] = useState<number | null>(null);
   const [userRol, setUserRol] = useState<string | null>(null);
+  const { isReadOnly } = useRol();
 
   // Estados de Datos
   const [products, setProducts] = useState<ProductoInventario[]>([]);
@@ -743,7 +745,7 @@ const Index = () => {
             </Dialog>
 
             {/* 🔹 CONDICIONAL PARA EL BOTÓN MODIFICAR */}
-            {(userRol === "Administrador" || userRol === "ADMINISTRADOR") && (
+            {!isReadOnly && (userRol === "Administrador" || userRol === "ADMINISTRADOR") && (
               <Button
                 size="sm"
                 variant="outline"
