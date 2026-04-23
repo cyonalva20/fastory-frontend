@@ -8,6 +8,16 @@ export interface AuthResponse {
   idEmpresa?: number;
 }
 
+export interface RegistroRequest {
+  nombreEmpresa: string;
+  ruc: string;
+  username: string;
+  password: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+}
+
 export const AuthService = {
   /**
    * Inicia sesión del usuario
@@ -51,16 +61,13 @@ export const AuthService = {
   },
 
   /**
-   * Registra un nuevo usuario
+   * Registra un nuevo usuario y empresa (Onboarding)
    */
-  register: async (
-    username: string,
-    password: string
-  ): Promise<AuthResponse> => {
+  register: async (payload: RegistroRequest): Promise<AuthResponse> => {
     try {
       const response = await apiRequest<AuthResponse>("/auth/register", {
         method: "POST",
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify(payload),
       });
 
       return response;
