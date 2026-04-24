@@ -373,7 +373,7 @@ const Auth = () => {
                   </Button>
 
                   <div className="text-center mt-6">
-                    <Link to="/forgot-password" className="text-[13px] text-[#F97316] hover:underline font-poppins transition-colors">
+                    <Link to="/forgot-password" className="inline-flex items-center justify-center gap-2 text-[13.5px] font-semibold text-[#F97316] bg-[#F97316]/10 hover:bg-[#F97316]/20 px-5 py-2.5 rounded-[10px] transition-all duration-300 font-poppins hover:-translate-y-0.5 shadow-sm hover:shadow-[0_4px_12px_rgba(249,115,22,0.15)]">
                       ¿Olvidaste tu contraseña?
                     </Link>
                   </div>
