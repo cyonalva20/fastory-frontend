@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
+import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import ForgotPassword from "./pages/ForgotPassword";
 import NewProduct from "./pages/NewProduct";
@@ -30,6 +31,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           {/* --- RUTA PÚBLICA --- */}
+          <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
 
@@ -37,7 +39,7 @@ const App = () => (
           
           {/* Nivel 1: Acceso Universal (Admin, Vendedor, Supervisor, Almacenero) */}
           <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<Index />} /> {/* Panel Principal */}
+            <Route path="/dashboard" element={<Index />} /> {/* Panel Principal */}
             <Route path="/suscripcion" element={<SubscriptionPanel />} />
           </Route>
 
