@@ -3,15 +3,20 @@ import { Link } from "react-router-dom";
 import { Moon, Sun, Menu, X, Box, MapPin, AlertTriangle, Users, FileSpreadsheet, Lock } from "lucide-react";
 
 const Landing = () => {
-  const [isDark, setIsDark] = useState(true);
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem('fastory-theme');
+    return saved !== 'light';
+  });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     // Inicializar el modo oscuro
     if (isDark) {
       document.documentElement.classList.add('dark');
+      localStorage.setItem('fastory-theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
+      localStorage.setItem('fastory-theme', 'light');
     }
   }, [isDark]);
 
