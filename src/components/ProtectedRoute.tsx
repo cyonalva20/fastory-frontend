@@ -34,7 +34,7 @@ const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
 
     if (!hasPermission) {
       // Si no tiene permiso, redirigir al Home (Index) por defecto
-      return <Navigate to="/" replace />;
+      return <Navigate to="/dashboard" replace />;
     }
   }
 

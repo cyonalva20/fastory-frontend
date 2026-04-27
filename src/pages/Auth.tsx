@@ -75,7 +75,7 @@ const Auth = () => {
 
   useEffect(() => {
     if (AuthService.isAuthenticated()) {
-      navigate("/", { replace: true });
+      navigate("/dashboard", { replace: true });
     }
   }, [navigate]);
 
@@ -107,7 +107,7 @@ const Auth = () => {
           title: "Inicio de sesión exitoso",
           description: "Redirigiendo al panel principal...",
         });
-        navigate("/", { replace: true });
+        navigate("/dashboard", { replace: true });
       } else {
         setUsername("");
         setPassword("");
@@ -178,6 +178,9 @@ const Auth = () => {
         variant: "default",
       });
       
+      // Guardar nombre empresa en localStorage
+      localStorage.setItem("fastory-empresa", values.nombreEmpresa);
+
       // Limpiar y cambiar a login
       registerForm.reset();
       setActiveTab("login");

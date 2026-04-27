@@ -18,6 +18,7 @@ import Movements from "./pages/Movements";
 import ManageUsers from "./pages/ManageUsers";
 import CurrentInventoryReport from "./pages/CurrentInventoryReport";
 import NotFound from "./pages/NotFound";
+import AuditLog from "./pages/AuditLog";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SubscriptionPanel from "./pages/SubscriptionPanel";
 
@@ -63,6 +64,7 @@ const App = () => (
             <Route path="/administrar-categorias" element={<ManageCategories />} />
             <Route path="/administrar-proveedores" element={<ManageProveedores />} />
             <Route path="/administrar-usuarios" element={<ManageUsers />} />
+            <Route path="/auditoria" element={<AuditLog />} />
           </Route>
 
           {/* Ruta por defecto para URLs no encontradas */}

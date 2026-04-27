@@ -14,6 +14,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import Sidebar from "@/components/Sidebar";
+import { SidebarProvider } from "@/components/SidebarContext";
+import AppHeader from "@/components/AppHeader"; // <-- Import AppHeader
 import {
   ArrowDownCircle,
   Package,
@@ -23,6 +25,7 @@ import {
   Clock,
   Check,
   ChevronsUpDown,
+  Trash2, // <-- Added Trash2
 } from "lucide-react";
 import { format } from "date-fns";
 import {
@@ -155,12 +158,12 @@ const ProductSearch: React.FC<ProductSearchProps> = ({
   }
 
   return (
-    <FormItem ref={containerRef}>
-      <FormLabel>Producto *</FormLabel>
+    <FormItem ref={containerRef} className="space-y-1.5">
+      <FormLabel className="text-[13px] text-[#6B7280] dark:text-[#9CA3AF]">Buscar Producto *</FormLabel>
       <FormControl>
         <div className="relative">
           <Input
-            className="h-11"
+            className="h-[46px] bg-[#F9FAFB] dark:bg-[#0A0F1E]/50 border-[#E5E7EB] dark:border-[#1F2937] rounded-[10px]"
             placeholder="Buscar producto por nombre"
             value={query}
             onFocus={() => setOpen(true)}
@@ -193,26 +196,26 @@ const ProductSearch: React.FC<ProductSearchProps> = ({
           />
 
           {open && (suggestions || isLoading) && (
-            <div className="absolute z-50 left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-56 overflow-auto">
+            <div className="absolute z-50 left-0 right-0 mt-1 bg-white dark:bg-[#111827] border border-[#E5E7EB] dark:border-[#1F2937] rounded-md shadow-lg max-h-56 overflow-auto">
               {isLoading && (
-                <div className="p-3 text-center text-sm text-muted-foreground">
+                <div className="p-3 text-center text-sm text-[#6B7280]">
                   Buscando...
                 </div>
               )}
               {!isLoading && !suggestions?.length && query && (
-                <div className="p-3 text-center text-sm text-muted-foreground">
+                <div className="p-3 text-center text-sm text-[#6B7280]">
                   No se encontraron productos.
                 </div>
               )}
               {!isLoading && !suggestions?.length && !query && (
-                <div className="p-3 text-center text-sm text-muted-foreground">
+                <div className="p-3 text-center text-sm text-[#6B7280]">
                   Escriba para buscar...
                 </div>
               )}
               {suggestions?.map((p, idx) => (
                 <div
                   key={p.idProducto}
-                  className={`px-3 py-2 cursor-pointer hover:bg-accent/30 ${idx === highlightIndex ? "bg-accent/40" : ""
+                  className={`px-3 py-2 cursor-pointer hover:bg-[#F3F4F6] dark:hover:bg-white/5 ${idx === highlightIndex ? "bg-[#F3F4F6] dark:bg-white/5" : ""
                     }`}
                   onMouseDown={(ev) => {
                     ev.preventDefault();
@@ -220,8 +223,8 @@ const ProductSearch: React.FC<ProductSearchProps> = ({
                   }}
                 >
                   <div className="flex justify-between">
-                    <div className="font-medium">{p.nombreProducto}</div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="font-medium text-[13px]">{p.nombreProducto}</div>
+                    <div className="text-xs text-[#6B7280]">
                       Stock: {p.stock}
                     </div>
                   </div>
@@ -240,11 +243,8 @@ const ProductSearch: React.FC<ProductSearchProps> = ({
 const RegisterSalesOutput = () => {
   // --- ESTADOS EXISTENTES ---
   const [customMotivo, setCustomMotivo] = useState("");
-  const [selectedProducts, setSelectedProducts] = useState<ProductoAgregado[]>(
-    []
-  );
-  const [selectedProduct, setSelectedProduct] =
-    useState<ProductoBusqueda | null>(null);
+  const [selectedProducts, setSelectedProducts] = useState<ProductoAgregado[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<ProductoBusqueda | null>(null);
   const [cantidadKey, setCantidadKey] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
   const [confirmation, setConfirmation] = useState<{
@@ -255,8 +255,7 @@ const RegisterSalesOutput = () => {
 
   // --- NUEVOS ESTADOS PARA DEVOLUCIONES ---
   const [showDevolucionDialog, setShowDevolucionDialog] = useState(false);
-  const [selectedProductDevolucionId, setSelectedProductDevolucionId] =
-    useState<number | null>(null);
+  const [selectedProductDevolucionId, setSelectedProductDevolucionId] = useState<number | null>(null);
   const [openCombobox, setOpenCombobox] = useState(false);
   const [selectedLote, setSelectedLote] = useState<LoteDetalle | null>(null);
   const [showSolicitudDialog, setShowSolicitudDialog] = useState(false);
@@ -331,7 +330,6 @@ const RegisterSalesOutput = () => {
 
   // --- NUEVAS QUERIES PARA DEVOLUCIONES ---
 
-  // Buscar productos para el diálogo de devolución
   const { data: searchDevolucionResults } = useQuery({
     queryKey: ["buscarProductosDevolucion", searchDevolucionQuery],
     queryFn: () => MovimientoService.buscarProductos(searchDevolucionQuery),
@@ -339,7 +337,6 @@ const RegisterSalesOutput = () => {
     staleTime: 1000,
   });
 
-  // Obtener detalles del producto seleccionado para devolución (incluye lotes)
   const { data: productDetails } = useQuery({
     queryKey: ["productoDetalle", selectedProductDevolucionId],
     queryFn: () =>
@@ -349,14 +346,12 @@ const RegisterSalesOutput = () => {
     enabled: !!selectedProductDevolucionId,
   });
 
-  // Obtener lista de proveedores (para mostrar info en solicitud)
   const { data: proveedores, isLoading: isLoadingProveedores } = useQuery({
     queryKey: ["proveedores"],
     queryFn: ProveedorService.listWithCount,
     enabled: showSolicitudDialog,
   });
 
-  // Obtener devoluciones pendientes
   const { 
     data: devolucionesPendientes,
     isLoading: isLoadingDevoluciones,
@@ -395,8 +390,7 @@ const RegisterSalesOutput = () => {
 
   // --- LÓGICA DEL FORMULARIO PRINCIPAL ---
   const cantidad = form.watch("cantidad");
-  const hasStockError =
-    selectedProduct && cantidad && cantidad > selectedProduct.stock;
+  const hasStockError = selectedProduct && cantidad && cantidad > selectedProduct.stock;
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     if (selectedProducts.length === 0) {
@@ -426,9 +420,7 @@ const RegisterSalesOutput = () => {
       return;
     }
     if (cantidad > selectedProduct.stock) {
-      toast.error(
-        "La cantidad supera el stock disponible del producto seleccionado"
-      );
+      toast.error("La cantidad supera el stock disponible del producto seleccionado");
       return;
     }
 
@@ -504,8 +496,6 @@ const RegisterSalesOutput = () => {
     const values = solicitudForm.getValues();
     if (!productDetails || !selectedLote) return;
 
-    // VALIDACIÓN IMPORTANTE:
-    // Aquí verificamos si el lote tiene ID. Si el backend no lo envía, esto falla.
     if (!selectedLote.idLote) {
         toast.error("Error técnico: El lote seleccionado no tiene ID. Asegúrese de haber actualizado el Backend.");
         return;
@@ -532,7 +522,6 @@ const RegisterSalesOutput = () => {
     }
   };
 
-  // Encontrar info del proveedor
   const proveedorInfo = proveedores?.find(
     (p) =>
       p.nombreProveedor.trim().toLowerCase() ===
@@ -540,460 +529,392 @@ const RegisterSalesOutput = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background flex">
-      <div className="flex flex-1">
+    <SidebarProvider>
+      <div className="min-h-screen bg-[#F3F4F6] dark:bg-background flex sidebar-transition">
         <Sidebar activeSection="salidas" />
+        <div className="flex-1 flex flex-col min-h-screen sidebar-transition">
+          <AppHeader sectionTitle="Registrar Salida" />
+          <main className="flex-1 overflow-y-auto animate-fade-in">
+            <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-[1600px] mx-auto">
+              
+              <div className="mb-6 lg:ml-0 ml-14 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                <div>
+                  <h2 className="text-[24px] font-bold text-[#111827] dark:text-white" style={{ fontFamily: 'Poppins,sans-serif' }}>
+                    Registrar Salida
+                  </h2>
+                  <p className="text-[#6B7280] dark:text-white/50 text-[14px] mt-0.5">
+                    Registre las salidas de productos del inventario
+                  </p>
+                </div>
+              </div>
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 animate-fade-in">
-          <div className="max-w-6xl mx-auto">
-            <div className="mb-6 sm:mb-8 lg:ml-0 ml-14">
-              <h1 className="text-2xl sm:text-3xl lg:text-3xl font-bold mb-2 text-foreground">
-                Registrar Salida por Venta
-              </h1>
-              <p className="text-muted-foreground text-sm sm:text-base">
-                Registre las salidas de productos del inventario
-              </p>
-            </div>
-
-            <div className="grid lg:grid-cols-2 gap-6 lg:ml-0 ml-14">
-              {/* Formulario */}
-              <div className="bg-card/60 backdrop-blur-sm border-2 border-border/50 rounded-xl shadow-lg p-6">
-                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <ArrowDownCircle className="w-5 h-5 text-destructive" />
-                  Registro de Salida
-                </h2>
-
-                <Form {...form}>
-                  <form
-                    onSubmit={form.handleSubmit(onSubmit)}
-                    className="space-y-5"
-                  >
-                    <FormField
-                      control={form.control}
-                      name="producto"
-                      render={({ field }) => (
-                        <ProductSearch
-                          field={field}
-                          query={query}
-                          setQuery={setQuery}
-                          suggestions={suggestions}
-                          isLoading={isLoadingProducts}
-                          isLocked={isLocked}
-                          onSelectProduct={setSelectedProduct}
-                        />
-                      )}
-                    />
-
-                    {selectedProduct && (
-                      <div className="p-4 bg-muted/50 rounded-lg border border-border shadow-md">
-                        <h3 className="text-lg font-semibold mb-2">
-                          Producto seleccionado
-                        </h3>
-                        <p className="text-sm font-medium">
-                          Nombre:{" "}
-                          <span className="text-foreground">
-                            {selectedProduct.nombreProducto}
-                          </span>
-                        </p>
-                        <p className="text-sm font-medium">
-                          Stock actual:{" "}
-                          <span className="text-foreground">
-                            {selectedProduct.stock}
-                          </span>
-                        </p>
-                        {selectedProduct.descripcionProducto && (
-                          <p className="text-sm text-muted-foreground mt-2">
-                            Descripción: {selectedProduct.descripcionProducto}
-                          </p>
-                        )}
-                        <p className="text-sm font-medium mt-2">
-                          Precio:{" "}
-                          <span className="text-foreground">
-                            {selectedProduct.precioVenta?.toFixed(2) ?? "N/A"}
-                          </span>
-                        </p>
+              <div className="grid lg:grid-cols-[1fr_400px] xl:grid-cols-[1fr_450px] gap-6 lg:ml-0 ml-14 items-start">
+                {/* Izquierda: Formulario de Salida y Devoluciones */}
+                <div className="space-y-6">
+                  {/* Formulario */}
+                  <div className="bg-white dark:bg-[#111827] border border-[#E5E7EB] dark:border-[#1F2937] rounded-xl p-5 sm:p-6 shadow-sm">
+                    <h3 className="text-[15px] font-semibold text-[#111827] dark:text-white mb-5 flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center text-red-500 font-bold text-[13px]">
+                        1
                       </div>
-                    )}
+                      Paso 1: Buscar y Agregar
+                    </h3>
 
-                    <FormField
-                      control={form.control}
-                      name="cantidad"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Cantidad a retirar *</FormLabel>
-                          <FormControl>
-                            <Input
-                              key={cantidadKey}
-                              type="number"
-                              step="1"
-                              className="h-11"
-                              {...field}
-                              disabled={!selectedProduct || isLocked}
+                    <style>{`
+                      .input-wrapper:hover input {
+                        border-color: #EF4444 !important;
+                      }
+                    `}</style>
+                    <Form {...form}>
+                      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                        <FormField
+                          control={form.control}
+                          name="producto"
+                          render={({ field }) => (
+                            <ProductSearch
+                              field={field}
+                              query={query}
+                              setQuery={setQuery}
+                              suggestions={suggestions}
+                              isLoading={isLoadingProducts}
+                              isLocked={isLocked}
+                              onSelectProduct={setSelectedProduct}
                             />
-                          </FormControl>
-                          {hasStockError && (
-                            <p className="text-xs text-destructive mt-1">
-                              La cantidad supera el stock disponible (
-                              {selectedProduct.stock})
-                            </p>
                           )}
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        />
 
-                    <Button
-                      type="button"
-                      className="mt-2 h-10 px-4 py-2 text-sm font-medium bg-primary text-white rounded-md self-end"
-                      onClick={addProduct}
-                      disabled={
-                        isLocked ||
-                        !selectedProduct ||
-                        !cantidad ||
-                        cantidad <= 0 ||
-                        hasStockError
-                      }
-                    >
-                      Agregar Producto
-                    </Button>
-
-                    {selectedProducts.length > 0 && (
-                      <div className="space-y-4 mt-4">
-                        {selectedProducts.map((product) => (
-                          <div
-                            key={product.id}
-                            className="p-4 bg-muted/50 rounded-lg border border-border shadow-md flex justify-between items-center hover:shadow-lg transition-shadow"
-                          >
-                            <div>
-                              <p className="text-sm font-medium text-foreground">
-                                Producto: {product.nombre}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                Cantidad: {product.cantidad} | Stock:{" "}
-                                {product.stock}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                Precio:{" "}
-                                {product.precioVenta?.toFixed(2) ?? "N/A"} |
-                                Subtotal:{" "}
-                                {(
-                                  product.cantidad * (product.precioVenta || 0)
-                                ).toFixed(2)}
-                              </p>
+                        {selectedProduct && (
+                          <div className="p-4 bg-[#F9FAFB] dark:bg-white/5 rounded-xl border border-[#E5E7EB] dark:border-[#1F2937] mt-2 animate-fade-in">
+                            <div className="flex items-center justify-between mb-4 pb-3 border-b border-[#E5E7EB] dark:border-[#1F2937]">
+                              <div className="flex items-center gap-2">
+                                <Package className="w-4 h-4 text-[#9CA3AF]" />
+                                <span className="text-[14px] font-semibold text-[#111827] dark:text-white">{selectedProduct.nombreProducto}</span>
+                              </div>
+                              <span className="text-[12px] font-medium text-[#6B7280] dark:text-[#9CA3AF] bg-white dark:bg-[#111827] border border-[#E5E7EB] dark:border-[#1F2937] px-2 py-1 rounded-md">
+                                Stock: {selectedProduct.stock}
+                              </span>
                             </div>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => removeProduct(product.id)}
-                            >
-                              Eliminar
-                            </Button>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <FormField
+                                control={form.control}
+                                name="cantidad"
+                                render={({ field }) => (
+                                  <FormItem className="space-y-1.5">
+                                    <FormLabel className="text-[13px] text-[#6B7280] dark:text-[#9CA3AF]">Cantidad a retirar *</FormLabel>
+                                    <FormControl>
+                                      <div className="relative group input-wrapper">
+                                        <Input
+                                          key={cantidadKey}
+                                          type="number"
+                                          step="1"
+                                          className={`peer h-[46px] bg-white dark:bg-[#0A0F1E]/50 border-[#E5E7EB] dark:border-[#1F2937] text-[#111827] dark:text-white focus-visible:ring-0 focus-visible:border-red-500 rounded-[10px] transition-all duration-200 ${hasStockError ? 'border-red-500' : ''}`}
+                                          {...field}
+                                          disabled={!selectedProduct || isLocked}
+                                        />
+                                      </div>
+                                    </FormControl>
+                                    {hasStockError && (
+                                      <p className="text-[11px] text-red-500 mt-1 font-medium">
+                                        Supera el stock disponible
+                                      </p>
+                                    )}
+                                  </FormItem>
+                                )}
+                              />
+                              <div className="flex items-end">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  className="w-full h-[46px] border-red-500 text-red-500 hover:bg-red-500/10 rounded-[10px]"
+                                  onClick={addProduct}
+                                  disabled={isLocked || !selectedProduct || !cantidad || cantidad <= 0 || hasStockError}
+                                >
+                                  Agregar a la lista
+                                </Button>
+                              </div>
+                            </div>
+                            
+                            {selectedProduct.descripcionProducto && (
+                              <p className="text-[12px] text-[#6B7280] dark:text-[#9CA3AF] mt-3 pt-3 border-t border-[#E5E7EB] dark:border-[#1F2937]">
+                                <span className="font-medium">Ref:</span> {selectedProduct.descripcionProducto}
+                              </p>
+                            )}
                           </div>
-                        ))}
+                        )}
+
+                        <FormField
+                          control={form.control}
+                          name="motivo"
+                          render={({ field }) => (
+                            <FormItem className="space-y-1.5 pt-2">
+                              <FormLabel className="text-[13px] text-[#6B7280] dark:text-[#9CA3AF]">Motivo de salida *</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger className="h-[46px] bg-[#F9FAFB] dark:bg-[#0A0F1E]/50 border-[#E5E7EB] dark:border-[#1F2937] rounded-[10px]">
+                                    <SelectValue placeholder="Seleccione un motivo" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent className="bg-white dark:bg-[#111827] border-[#E5E7EB] dark:border-[#1F2937]">
+                                  <SelectItem value="Venta">Venta</SelectItem>
+                                  <SelectItem value="Traslado Interno">Traslado interno</SelectItem>
+                                  <SelectItem value="otro">Otro</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage className="text-xs" />
+
+                              {field.value === "otro" && (
+                                <div className="mt-3 animate-fade-in">
+                                  <FormControl>
+                                    <div className="relative group input-wrapper">
+                                      <Input
+                                        className="peer h-[50px] px-4 pt-5 pb-2 bg-[#F9FAFB] dark:bg-[#0A0F1E]/50 border-[#E5E7EB] dark:border-[#1F2937] text-[#111827] dark:text-white focus-visible:ring-0 focus-visible:border-red-500 rounded-[10px] transition-all duration-200"
+                                        placeholder=" "
+                                        value={customMotivo}
+                                        onChange={(e) => setCustomMotivo(e.target.value)}
+                                      />
+                                      <label className="absolute left-4 top-3 -translate-y-1/2 scale-[0.85] -translate-x-1 text-[#6B7280] dark:text-[#9CA3AF] pointer-events-none transition-all duration-200 transform origin-left peer-placeholder-shown:top-1/2 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-x-0 peer-focus:top-3 peer-focus:scale-[0.85] peer-focus:-translate-x-1 peer-focus:text-red-500 text-[13px]">
+                                        Especifique el motivo
+                                      </label>
+                                    </div>
+                                  </FormControl>
+                                </div>
+                              )}
+                            </FormItem>
+                          )}
+                        />
+                      </form>
+                    </Form>
+                  </div>
+
+                  {/* Devoluciones Card (Moved here) */}
+                  <div className="bg-white dark:bg-[#111827] border border-[#E5E7EB] dark:border-[#1F2937] rounded-xl p-5 sm:p-6 shadow-sm">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 gap-4">
+                      <h3 className="text-[15px] font-semibold text-[#111827] dark:text-white flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                          <RotateCcw className="w-4 h-4 text-blue-500" />
+                        </div>
+                        Devoluciones al Proveedor
+                      </h3>
+                      <Button
+                        onClick={() => setShowDevolucionDialog(true)}
+                        className="h-9 px-4 text-[12px] bg-blue-50 hover:bg-blue-100 dark:bg-blue-500/10 dark:hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30 rounded-lg transition-colors"
+                      >
+                        Nueva Devolución
+                      </Button>
+                    </div>
+
+                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+                      {isLoadingDevoluciones && (
+                        <div className="flex justify-center py-6">
+                          <Loader2 className="h-5 w-5 animate-spin text-[#9CA3AF]" />
+                        </div>
+                      )}
+                      
+                      {!isLoadingDevoluciones && (!devolucionesPendientes || devolucionesPendientes.length === 0) && (
+                        <p className="text-[13px] text-[#9CA3AF] text-center py-6">No hay devoluciones pendientes</p>
+                      )}
+
+                      {!isLoadingDevoluciones && devolucionesPendientes && devolucionesPendientes.length > 0 && (
+                        devolucionesPendientes.map((devolucion) => (
+                          <div key={devolucion.idDevolucion} className="p-3 bg-[#F9FAFB] dark:bg-white/5 border border-[#E5E7EB] dark:border-[#1F2937] rounded-xl">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <h4 className="font-semibold text-[13px] text-[#111827] dark:text-white">
+                                  {devolucion.nombreProducto}
+                                </h4>
+                                <p className="text-[11px] text-[#6B7280] dark:text-[#9CA3AF]">
+                                  Lote: {devolucion.codigoLote} | Cantidad: {devolucion.cantidad}
+                                </p>
+                                <p className="text-[10px] text-[#9CA3AF] dark:text-white/40 mt-1">
+                                  Fecha de recepción: {devolucion.fechaRecepcion}
+                                </p>
+                              </div>
+                              <span className="px-2 py-0.5 bg-yellow-100 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-500 text-[10px] rounded-full font-medium border border-yellow-200 dark:border-yellow-500/20">
+                                {devolucion.estado}
+                              </span>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Historial (movido debajo para mejor uso del espacio vertical) */}
+                  <div className="bg-white dark:bg-[#111827] border border-[#E5E7EB] dark:border-[#1F2937] rounded-xl p-5 sm:p-6 shadow-sm">
+                    <h3 className="text-[15px] font-semibold text-[#111827] dark:text-white mb-4 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-[#9CA3AF]" />
+                      Historial Reciente
+                    </h3>
+                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+                      {isLoadingHistory ? (
+                        <div className="text-center py-6">
+                          <Loader2 className="h-5 w-5 animate-spin mx-auto text-[#9CA3AF]" />
+                        </div>
+                      ) : !historial?.length ? (
+                        <p className="text-[13px] text-[#9CA3AF] text-center py-6">No hay salidas registradas</p>
+                      ) : (
+                        historial.slice(0, 10).map((item) => (
+                          <div key={item.idMovimiento} className="p-3 bg-[#F9FAFB] dark:bg-white/5 border border-[#E5E7EB] dark:border-[#1F2937] rounded-xl">
+                            <div className="flex items-start gap-3">
+                              <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0">
+                                <ArrowDownCircle className="w-4 h-4 text-red-500" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex justify-between items-start mb-1">
+                                  <h4 className="font-medium text-[13px] text-[#111827] dark:text-white truncate pr-2" title={item.motivo}>{item.motivo}</h4>
+                                  <span className="text-[11px] font-semibold text-red-500 whitespace-nowrap">S/ {item.totalGeneral?.toFixed(2) ?? "0.00"}</span>
+                                </div>
+                                <div className="text-[11px] text-[#6B7280] dark:text-[#9CA3AF] space-y-0.5 mb-1.5">
+                                  {item.detalles.slice(0, 2).map((p, i) => (
+                                    <p key={i} className="truncate">• {p.cantidad}x {p.nombreProducto}</p>
+                                  ))}
+                                  {item.detalles.length > 2 && <p>• +{item.detalles.length - 2} más</p>}
+                                </div>
+                                <p className="text-[10px] text-[#9CA3AF] dark:text-white/40">
+                                  {format(new Date(item.fechaMovimiento), "dd/MM/yyyy HH:mm")} · {item.nombreUsuario}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Derecha: Resumen de Salida */}
+                <div className="bg-white dark:bg-[#111827] border border-[#E5E7EB] dark:border-[#1F2937] rounded-xl shadow-sm relative overflow-hidden flex flex-col sticky top-6">
+                  <div className="absolute top-0 left-0 right-0 h-[2px] bg-red-500" />
+                  <div className="p-5 sm:p-6 flex-1 flex flex-col">
+                    <h3 className="text-[15px] font-semibold text-[#111827] dark:text-white mb-5 flex items-center justify-between pb-3 border-b border-[#E5E7EB] dark:border-[#1F2937]">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-md bg-red-500/10 flex items-center justify-center text-red-500 font-bold text-[11px]">2</div>
+                        Lista de Salida a Procesar
+                      </div>
+                      <span className="bg-[#F3F4F6] dark:bg-white/10 text-[#6B7280] dark:text-white/60 text-[11px] px-2 py-0.5 rounded-full">
+                        {selectedProducts.length} items
+                      </span>
+                    </h3>
+
+                    {selectedProducts.length === 0 ? (
+                      <div className="flex-1 flex flex-col items-center justify-center py-12 text-center">
+                        <div className="w-16 h-16 rounded-full bg-[#F3F4F6] dark:bg-white/5 flex items-center justify-center mb-3">
+                          <ArrowDownCircle className="w-6 h-6 text-[#D1D5DB] dark:text-white/20" />
+                        </div>
+                        <p className="text-[14px] font-medium text-[#4B5563] dark:text-white/60">Lista vacía</p>
+                        <p className="text-[12px] text-[#9CA3AF] mt-1 max-w-[200px]">Busque y agregue productos para registrar la salida</p>
+                      </div>
+                    ) : (
+                      <div className="flex-1 flex flex-col">
+                        <div className="space-y-3 overflow-y-auto max-h-[400px] pr-2 mb-6">
+                          {selectedProducts.map((product) => (
+                            <div key={product.id} className="p-3 bg-[#F9FAFB] dark:bg-[#0A0F1E]/50 border border-[#E5E7EB] dark:border-[#1F2937] rounded-xl group">
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <p className="text-[13px] font-semibold text-[#111827] dark:text-white leading-tight">
+                                  {product.nombre}
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={() => removeProduct(product.id)}
+                                  className="text-[#9CA3AF] hover:text-red-500 transition-colors bg-white dark:bg-[#111827] rounded-md p-1 border border-[#E5E7EB] dark:border-[#1F2937] shrink-0"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                              <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-[#6B7280] dark:text-[#9CA3AF]">
+                                <span>Cant: <strong className="text-[#111827] dark:text-white/90">{product.cantidad}</strong></span>
+                                <span>Precio: S/ {product.precioVenta?.toFixed(2) ?? "N/A"}</span>
+                              </div>
+                              <div className="mt-2 pt-2 border-t border-[#E5E7EB] dark:border-[#1F2937] flex justify-between items-center">
+                                <span className="text-[11px] text-[#9CA3AF]">
+                                  Stock restante: {product.stock - product.cantidad}
+                                </span>
+                                <span className="text-[13px] font-bold text-[#111827] dark:text-white">
+                                  S/ {(product.cantidad * (product.precioVenta || 0)).toFixed(2)}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="mt-auto border-t border-[#E5E7EB] dark:border-[#1F2937] pt-4">
+                          {form.watch("motivo") === "Venta" && (
+                            <div className="flex justify-between items-end mb-5">
+                              <span className="text-[14px] text-[#6B7280] dark:text-[#9CA3AF] font-medium">Total Venta</span>
+                              <span className="text-[24px] font-bold text-[#111827] dark:text-white leading-none">
+                                S/ {selectedProducts.reduce((acc, p) => acc + p.cantidad * (p.precioVenta || 0), 0).toFixed(2)}
+                              </span>
+                            </div>
+                          )}
+                          <Button 
+                            onClick={form.handleSubmit(onSubmit)}
+                            disabled={registrarSalidaMutation.isPending}
+                            className="w-full h-12 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-[0_4px_15px_rgba(239,68,68,0.35)] hover:shadow-[0_6px_25px_rgba(239,68,68,0.55)] hover:-translate-y-[1px] transition-all duration-200 rounded-[10px] font-semibold border-none"
+                          >
+                            {registrarSalidaMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Confirmar Salida
+                          </Button>
+                        </div>
                       </div>
                     )}
-
-                    <FormField
-                      control={form.control}
-                      name="motivo"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Motivo de salida *</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            value={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger className="h-11">
-                                <SelectValue placeholder="Seleccione un motivo" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent className="bg-popover">
-                              <SelectItem value="Venta">Venta</SelectItem>
-                              <SelectItem value="Traslado Interno">
-                                Traslado interno
-                              </SelectItem>
-                              <SelectItem value="otro">Otro</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-
-                          {field.value === "otro" && (
-                            <div className="mt-4">
-                              <FormLabel>Especifique el motivo</FormLabel>
-                              <FormControl>
-                                <Input
-                                  className="h-11"
-                                  placeholder="Ingrese el motivo"
-                                  value={customMotivo}
-                                  onChange={(e) =>
-                                    setCustomMotivo(e.target.value)
-                                  }
-                                />
-                              </FormControl>
-                            </div>
-                          )}
-                        </FormItem>
-                      )}
-                    />
-
-                    {form.watch("motivo") === "Venta" &&
-                      selectedProducts.length > 0 && (
-                        <div className="flex justify-end mt-4 text-lg font-bold">
-                          Total: S/{" "}
-                          {selectedProducts
-                            .reduce(
-                              (acc, p) => acc + p.cantidad * (p.precioVenta || 0),
-                              0
-                            )
-                            .toFixed(2)}
-                        </div>
-                      )}
-
-                    <Button
-                      type="submit"
-                      className="w-full h-12"
-                      disabled={
-                        registrarSalidaMutation.isPending ||
-                        selectedProducts.length === 0
-                      }
-                    >
-                      {registrarSalidaMutation.isPending && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      )}
-                      Registrar Salida
-                    </Button>
-                  </form>
-                </Form>
-              </div>
-
-              {/* Historial */}
-              <div className="bg-card/60 backdrop-blur-sm border-2 border-border/50 rounded-xl shadow-lg p-6">
-                <h2 className="text-lg font-semibold mb-4">
-                  Historial de Salidas
-                </h2>
-                <div className="space-y-3 max-h-[500px] overflow-y-auto">
-                  {isLoadingHistory && (
-                    <div className="text-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground mt-2">
-                        Cargando historial...
-                      </p>
-                    </div>
-                  )}
-                  {historyError && (
-                    <Alert variant="destructive">
-                      <AlertTriangle className="h-4 w-4" />
-                      <AlertTitle>Error al cargar historial</AlertTitle>
-                      <AlertDescription>
-                        {historyError.message ||
-                          "No se pudo conectar al servidor."}
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                  {!isLoadingHistory && !historial?.length && (
-                    <p className="text-sm text-muted-foreground text-center py-8">
-                      No hay movimientos registrados
-                    </p>
-                  )}
-                  {historial?.map((item) => (
-                    <div
-                      key={item.idMovimiento}
-                      className="p-3 bg-background/50 border border-border rounded-lg"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center flex-shrink-0">
-                          <Package className="w-4 h-4 text-destructive" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-sm">
-                            Motivo: {item.motivo}
-                          </h4>
-                          <div className="text-xs text-muted-foreground mt-1 space-y-1">
-                            {item.detalles.map((detalle, index) => (
-                              <p key={index} className="leading-snug">
-                                • {detalle.nombreProducto}: {detalle.cantidad}{" "}
-                                und. | Precio:{" "}
-                                {detalle.precioVenta?.toFixed(2) ?? "N/A"} |
-                                Subtotal:{" "}
-                                {detalle.subtotal?.toFixed(2) ?? "N/A"}
-                              </p>
-                            ))}
-                            <p className="font-semibold text-foreground pt-1 border-t border-border">
-                              Total: S/ {item.totalGeneral?.toFixed(2) ?? "N/A"}
-                            </p>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {format(
-                              new Date(item.fechaMovimiento),
-                              "dd/MM/yyyy HH:mm"
-                            )}{" "}
-                            - {item.nombreUsuario}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                  </div>
                 </div>
+
               </div>
             </div>
-
-            {/* --- SECCIÓN DE DEVOLUCIONES --- */}
-
-            {/* Botón de Devolución por Vencimiento */}
-            <div className="mt-8 lg:ml-0 ml-14">
-              <Button
-                onClick={() => setShowDevolucionDialog(true)}
-                className="w-full sm:w-auto h-12 flex items-center gap-2"
-                variant="outline"
-              >
-                <RotateCcw className="w-5 h-5" />
-                Devolución de Producto por Vencimiento
-              </Button>
-            </div>
-
-            {/* Lista de Devoluciones Pendientes */}
-            <div className="mt-6 lg:ml-0 ml-14 bg-card/60 backdrop-blur-sm border-2 border-border/50 rounded-xl shadow-lg p-6">
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-primary" />
-                Devoluciones Pendientes por Recibir
-              </h2>
-
-              {isLoadingDevoluciones && (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-              )}
-
-              {errorDevoluciones && (
-                <Alert variant="destructive">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>
-                    No se pudieron cargar las devoluciones pendientes.
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {!isLoadingDevoluciones && !errorDevoluciones && (!devolucionesPendientes || devolucionesPendientes.length === 0) && (
-                <div className="text-center py-8 text-muted-foreground">
-                  No hay devoluciones pendientes.
-                </div>
-              )}
-
-              {!isLoadingDevoluciones && devolucionesPendientes && devolucionesPendientes.length > 0 && (
-                <div className="space-y-3">
-                  {devolucionesPendientes.map((devolucion) => (
-                    <div
-                      key={devolucion.idDevolucion}
-                      className="p-4 bg-background/50 border border-border rounded-lg"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <h4 className="font-semibold">
-                            {devolucion.nombreProducto}
-                          </h4>
-                          <p className="text-sm text-muted-foreground">
-                            Lote: {devolucion.codigoLote}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Proveedor: {devolucion.nombreProveedor || "N/A"}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Cantidad: {devolucion.cantidad}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Fecha de recepción: {devolucion.fechaRecepcion}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Estado: {devolucion.estado}
-                          </p>
-                        </div>
-                        <span className="px-3 py-1 bg-yellow-500/10 text-yellow-600 text-xs rounded-full font-medium border border-yellow-500/20">
-                          {devolucion.estado}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
 
       {/* --- DIÁLOGOS --- */}
 
-      {/* Diálogo de Confirmación de Actualización de Cantidad (Existente) */}
+      {/* Diálogo de Confirmación de Actualización de Cantidad */}
       {confirmation && (
-        <AlertDialog
-          open={!!confirmation}
-          onOpenChange={() => setConfirmation(null)}
-        >
-          <AlertDialogContent>
+        <AlertDialog open={!!confirmation} onOpenChange={() => setConfirmation(null)}>
+          <AlertDialogContent className="bg-white dark:bg-[#111827] border-[#E5E7EB] dark:border-[#1F2937]">
             <AlertDialogHeader>
-              <AlertDialogTitle>Producto ya agregado</AlertDialogTitle>
-              <AlertDialogDescription>
-                El producto "
-                <span className="font-medium">{confirmation.productName}</span>"
-                ya está en la lista. ¿Desea actualizar la cantidad a{" "}
-                <span className="font-medium">{confirmation.newQuantity}</span>?
+              <AlertDialogTitle className="text-[#111827] dark:text-white">Producto ya agregado</AlertDialogTitle>
+              <AlertDialogDescription className="text-[#6B7280] dark:text-[#9CA3AF]">
+                El producto "<span className="font-medium text-[#111827] dark:text-white">{confirmation.productName}</span>"
+                ya está en la lista. ¿Desea actualizar la cantidad a <span className="font-medium text-[#111827] dark:text-white">{confirmation.newQuantity}</span>?
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={cancelUpdate}>
-                Cancelar
-              </AlertDialogCancel>
-              <AlertDialogAction onClick={confirmUpdate}>
-                Confirmar
-              </AlertDialogAction>
+              <AlertDialogCancel onClick={cancelUpdate} className="border-[#E5E7EB] dark:border-[#1F2937]">Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmUpdate} className="bg-red-500 hover:bg-red-600 text-white">Confirmar</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
       )}
 
       {/* Dialog Principal de Devolución */}
-      <Dialog
-        open={showDevolucionDialog}
-        onOpenChange={setShowDevolucionDialog}
-      >
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <Dialog open={showDevolucionDialog} onOpenChange={setShowDevolucionDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#111827] border-[#E5E7EB] dark:border-[#1F2937]">
           <DialogHeader>
-            <DialogTitle>Devolución de Producto por Vencimiento</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-[#111827] dark:text-white">Devolución de Producto por Vencimiento</DialogTitle>
+            <DialogDescription className="text-[#6B7280] dark:text-[#9CA3AF]">
               Busque y seleccione el producto para gestionar su devolución
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-6 py-4">
-            {/* Combobox de búsqueda de productos */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Buscar Producto *</label>
+              <label className="text-[13px] font-medium text-[#6B7280] dark:text-[#9CA3AF]">Buscar Producto *</label>
               <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
                 <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={openCombobox}
-                    className="w-full justify-between h-11"
-                  >
+                  <Button variant="outline" role="combobox" aria-expanded={openCombobox} className="w-full justify-between h-[46px] bg-[#F9FAFB] dark:bg-[#0A0F1E]/50 border-[#E5E7EB] dark:border-[#1F2937] rounded-[10px]">
                     {selectedProductDevolucionId
-                      ? searchDevolucionResults?.find(
-                        (p) => p.idProducto === selectedProductDevolucionId
-                      )?.nombreProducto || "Producto seleccionado"
+                      ? searchDevolucionResults?.find((p) => p.idProducto === selectedProductDevolucionId)?.nombreProducto || "Producto seleccionado"
                       : "Escriba para buscar un producto..."}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-full p-0" align="start">
+                <PopoverContent className="w-full p-0 bg-white dark:bg-[#111827] border-[#E5E7EB] dark:border-[#1F2937]" align="start">
                   <Command>
-                    <CommandInput
-                      placeholder="Buscar producto..."
-                      value={searchDevolucionQuery}
-                      onValueChange={setSearchDevolucionQuery}
-                    />
+                    <CommandInput placeholder="Buscar producto..." value={searchDevolucionQuery} onValueChange={setSearchDevolucionQuery} className="h-11" />
                     <CommandList>
-                      <CommandEmpty>No se encontraron productos.</CommandEmpty>
+                      <CommandEmpty className="py-6 text-center text-sm text-[#6B7280]">No se encontraron productos.</CommandEmpty>
                       <CommandGroup>
                         {searchDevolucionResults?.map((product) => (
                           <CommandItem
@@ -1003,15 +924,9 @@ const RegisterSalesOutput = () => {
                               setSelectedProductDevolucionId(product.idProducto);
                               setOpenCombobox(false);
                             }}
+                            className="text-[13px] cursor-pointer"
                           >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                selectedProductDevolucionId === product.idProducto
-                                  ? "opacity-100"
-                                  : "opacity-0"
-                              )}
-                            />
+                            <Check className={cn("mr-2 h-4 w-4 text-[#F97316]", selectedProductDevolucionId === product.idProducto ? "opacity-100" : "opacity-0")} />
                             {product.nombreProducto}
                           </CommandItem>
                         ))}
@@ -1022,54 +937,35 @@ const RegisterSalesOutput = () => {
               </Popover>
             </div>
 
-            {/* Tabla de Lotes */}
             {selectedProductDevolucionId && productDetails && (
-              <div>
-                <h3 className="text-md font-semibold mb-3">
+              <div className="animate-fade-in">
+                <h3 className="text-[14px] font-semibold text-[#111827] dark:text-white mb-3">
                   Lotes disponibles de {productDetails.nombre}
                 </h3>
                 {productDetails.lotes && productDetails.lotes.length > 0 ? (
-                  <div className="border rounded-lg overflow-hidden">
+                  <div className="border border-[#E5E7EB] dark:border-[#1F2937] rounded-xl overflow-hidden bg-white dark:bg-[#111827]">
                     <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Lote</TableHead>
-                          <TableHead>Cantidad</TableHead>
-                          <TableHead>Fecha de Vencimiento</TableHead>
-                          <TableHead className="text-right">Acciones</TableHead>
+                      <TableHeader className="bg-[#F9FAFB] dark:bg-[#0A0F1E]">
+                        <TableRow className="border-[#E5E7EB] dark:border-[#1F2937] hover:bg-transparent">
+                          <TableHead className="text-[#6B7280] dark:text-[#9CA3AF] h-10 text-[12px] font-medium">Lote</TableHead>
+                          <TableHead className="text-[#6B7280] dark:text-[#9CA3AF] h-10 text-[12px] font-medium">Cantidad</TableHead>
+                          <TableHead className="text-[#6B7280] dark:text-[#9CA3AF] h-10 text-[12px] font-medium">Fecha Venc.</TableHead>
+                          <TableHead className="text-[#6B7280] dark:text-[#9CA3AF] h-10 text-[12px] font-medium text-right">Acciones</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {productDetails.lotes.map((lote) => {
-                          const fechaVenc = lote.fechaVencimiento
-                            ? new Date(lote.fechaVencimiento)
-                            : null;
+                          const fechaVenc = lote.fechaVencimiento ? new Date(lote.fechaVencimiento) : null;
                           const hoy = new Date();
                           hoy.setHours(0, 0, 0, 0);
-                          const isVencido =
-                            fechaVenc && fechaVenc < hoy;
-                          
-                          // El botón se habilita siempre si el producto tiene lotes disponibles, ya que se puede
-                          // devolver por mal estado o vencimiento según la nueva regla de negocio.
-                          const canSolicitarDevolucion = true;
-                          
+                          const isVencido = fechaVenc && fechaVenc < hoy;
                           return (
-                            <TableRow key={lote.codigoLote}>
-                              <TableCell className="font-medium">
-                                {lote.codigoLote}
-                              </TableCell>
-                              <TableCell>{lote.cantidad}</TableCell>
-                              <TableCell>
-                                <span
-                                  className={
-                                    isVencido
-                                      ? "text-destructive font-semibold"
-                                      : ""
-                                  }
-                                >
-                                  {fechaVenc
-                                    ? format(fechaVenc, "dd/MM/yyyy")
-                                    : "N/A"}
+                            <TableRow key={lote.codigoLote} className="border-[#E5E7EB] dark:border-[#1F2937] hover:bg-[#F9FAFB] dark:hover:bg-white/5 transition-colors">
+                              <TableCell className="font-medium text-[13px] text-[#111827] dark:text-white">{lote.codigoLote}</TableCell>
+                              <TableCell className="text-[13px] text-[#6B7280] dark:text-[#9CA3AF]">{lote.cantidad}</TableCell>
+                              <TableCell className="text-[13px]">
+                                <span className={isVencido ? "text-red-500 font-semibold bg-red-50 dark:bg-red-500/10 px-2 py-0.5 rounded-full" : "text-[#6B7280] dark:text-[#9CA3AF]"}>
+                                  {fechaVenc ? format(fechaVenc, "dd/MM/yyyy") : "N/A"}
                                 </span>
                               </TableCell>
                               <TableCell className="text-right">
@@ -1079,10 +975,9 @@ const RegisterSalesOutput = () => {
                                     handleSolicitarDevolucion(lote);
                                     solicitudForm.setValue("cantidad", lote.cantidad);
                                   }}
-                                  disabled={!canSolicitarDevolucion}
-                                  variant={"default"}
+                                  className="h-8 text-[11px] bg-blue-50 hover:bg-blue-100 text-blue-600 dark:bg-blue-500/10 dark:hover:bg-blue-500/20 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30"
                                 >
-                                  Solicitar Devolución
+                                  Solicitar
                                 </Button>
                               </TableCell>
                             </TableRow>
@@ -1092,7 +987,7 @@ const RegisterSalesOutput = () => {
                     </Table>
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-[13px] text-[#9CA3AF] bg-[#F9FAFB] dark:bg-white/5 p-4 rounded-xl text-center border border-[#E5E7EB] dark:border-[#1F2937]">
                     No hay lotes registrados para este producto.
                   </p>
                 )}
@@ -1103,144 +998,101 @@ const RegisterSalesOutput = () => {
       </Dialog>
 
       {/* Dialog de Solicitud de Devolución */}
-      <Dialog
-        open={showSolicitudDialog}
-        onOpenChange={setShowSolicitudDialog}
-      >
-        <DialogContent className="max-w-2xl">
+      <Dialog open={showSolicitudDialog} onOpenChange={setShowSolicitudDialog}>
+        <DialogContent className="max-w-xl bg-white dark:bg-[#111827] border-[#E5E7EB] dark:border-[#1F2937]">
           <DialogHeader>
-            <DialogTitle>Solicitar Devolución de Producto</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-[#111827] dark:text-white">Solicitar Devolución</DialogTitle>
+            <DialogDescription className="text-[#6B7280] dark:text-[#9CA3AF]">
               Complete la información para registrar la devolución
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6 py-4">
-            {/* Información del Proveedor */}
-            <div className="p-4 bg-muted/50 rounded-lg">
-              <h3 className="font-semibold mb-2">Información del Proveedor</h3>
-              <div className="space-y-1 text-sm">
-                <p>
-                  <span className="font-medium">Nombre:</span>{" "}
-                  {productDetails?.proveedor || "No registrado"}
-                </p>
-                <p>
-                  <span className="font-medium">Teléfono:</span>{" "}
-                  {isLoadingProveedores ? (
-                    <span className="text-muted-foreground text-xs">
-                      Cargando...
-                    </span>
-                  ) : (
-                    proveedorInfo?.telefono || "No disponible"
-                  )}
-                </p>
-              </div>
-            </div>
-
-            {/* Información del Lote */}
-            {selectedLote && (
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <h3 className="font-semibold mb-2">Información del Lote</h3>
-                <div className="space-y-1 text-sm">
-                  <p>
-                    <span className="font-medium">Producto:</span>{" "}
-                    {productDetails?.nombre}
-                  </p>
-                  <p>
-                    <span className="font-medium">Lote:</span>{" "}
-                    {selectedLote.codigoLote}
-                  </p>
-                  <p>
-                    <span className="font-medium">Cantidad:</span>{" "}
-                    {selectedLote.cantidad}
-                  </p>
-                  <p>
-                    <span className="font-medium">Fecha de Vencimiento:</span>{" "}
-                    {selectedLote.fechaVencimiento
-                      ? format(
-                        new Date(selectedLote.fechaVencimiento),
-                        "dd/MM/yyyy"
-                      )
-                      : "N/A"}
-                  </p>
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 bg-[#F9FAFB] dark:bg-[#0A0F1E]/50 border border-[#E5E7EB] dark:border-[#1F2937] rounded-xl">
+                <h3 className="text-[12px] font-semibold text-[#6B7280] dark:text-[#9CA3AF] uppercase tracking-wider mb-2">Proveedor</h3>
+                <div className="space-y-1 text-[13px]">
+                  <p className="text-[#111827] dark:text-white font-medium">{productDetails?.proveedor || "No registrado"}</p>
+                  <p className="text-[#6B7280] dark:text-[#9CA3AF]">{isLoadingProveedores ? "Cargando..." : (proveedorInfo?.telefono || "Sin teléfono")}</p>
                 </div>
               </div>
-            )}
 
-            {/* Formulario Nuevo de Devolución */}
+              {selectedLote && (
+                <div className="p-4 bg-[#F9FAFB] dark:bg-[#0A0F1E]/50 border border-[#E5E7EB] dark:border-[#1F2937] rounded-xl">
+                  <h3 className="text-[12px] font-semibold text-[#6B7280] dark:text-[#9CA3AF] uppercase tracking-wider mb-2">Detalles Lote</h3>
+                  <div className="space-y-1 text-[13px]">
+                    <p className="text-[#111827] dark:text-white font-medium truncate" title={productDetails?.nombre}>{productDetails?.nombre}</p>
+                    <p className="text-[#6B7280] dark:text-[#9CA3AF]">Lote: {selectedLote.codigoLote}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <Form {...solicitudForm}>
               <form className="space-y-4">
                 <FormField
                   control={solicitudForm.control}
                   name="idProveedor"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Proveedor *</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
+                    <FormItem className="space-y-1.5">
+                      <FormLabel className="text-[13px] text-[#6B7280] dark:text-[#9CA3AF]">Proveedor *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
-                          <SelectTrigger className="h-11">
+                          <SelectTrigger className="h-[46px] bg-[#F9FAFB] dark:bg-[#0A0F1E]/50 border-[#E5E7EB] dark:border-[#1F2937] rounded-[10px]">
                             <SelectValue placeholder="Seleccione el proveedor" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent className="bg-white dark:bg-[#111827] border-[#E5E7EB] dark:border-[#1F2937]">
                           {proveedores?.map((p) => (
-                            <SelectItem key={p.idProveedor} value={p.idProveedor.toString()}>
-                              {p.nombreProveedor}
-                            </SelectItem>
+                            <SelectItem key={p.idProveedor} value={p.idProveedor.toString()}>{p.nombreProveedor}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                      <FormMessage />
+                      <FormMessage className="text-[11px]" />
                     </FormItem>
                   )}
                 />
 
-                <FormField
-                  control={solicitudForm.control}
-                  name="cantidad"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cantidad a devolver *</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min={1}
-                          max={selectedLote?.cantidad || 1}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={solicitudForm.control}
+                    name="cantidad"
+                    render={({ field }) => (
+                      <FormItem className="space-y-1.5">
+                        <FormLabel className="text-[13px] text-[#6B7280] dark:text-[#9CA3AF]">Cantidad a devolver *</FormLabel>
+                        <FormControl>
+                          <Input type="number" min={1} max={selectedLote?.cantidad || 1} className="h-[46px] bg-[#F9FAFB] dark:bg-[#0A0F1E]/50 border-[#E5E7EB] dark:border-[#1F2937] rounded-[10px]" {...field} />
+                        </FormControl>
+                        <FormMessage className="text-[11px]" />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={solicitudForm.control}
+                    name="fechaEntrega"
+                    render={({ field }) => (
+                      <FormItem className="space-y-1.5">
+                        <FormLabel className="text-[13px] text-[#6B7280] dark:text-[#9CA3AF]">Fecha Entrega (Opcional)</FormLabel>
+                        <FormControl>
+                          <Input type="date" className="h-[46px] bg-[#F9FAFB] dark:bg-[#0A0F1E]/50 border-[#E5E7EB] dark:border-[#1F2937] rounded-[10px]" {...field} />
+                        </FormControl>
+                        <FormMessage className="text-[11px]" />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <FormField
                   control={solicitudForm.control}
                   name="motivo"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Motivo de la devolución (Opcional)</FormLabel>
+                    <FormItem className="space-y-1.5">
+                      <FormLabel className="text-[13px] text-[#6B7280] dark:text-[#9CA3AF]">Motivo de la devolución (Opcional)</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ej. Producto dañado..." {...field} />
+                        <Input placeholder="Ej. Producto dañado..." className="h-[46px] bg-[#F9FAFB] dark:bg-[#0A0F1E]/50 border-[#E5E7EB] dark:border-[#1F2937] rounded-[10px]" {...field} />
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={solicitudForm.control}
-                  name="fechaEntrega"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Fecha de Entrega (Opcional)</FormLabel>
-                      <FormControl>
-                        <Input type="date" className="h-11" {...field} />
-                      </FormControl>
-                      <FormMessage />
+                      <FormMessage className="text-[11px]" />
                     </FormItem>
                   )}
                 />
@@ -1248,42 +1100,35 @@ const RegisterSalesOutput = () => {
             </Form>
           </div>
 
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowSolicitudDialog(false)}
-            >
+          <DialogFooter className="gap-2 mt-2">
+            <Button variant="outline" onClick={() => setShowSolicitudDialog(false)} className="h-[42px] border-[#E5E7EB] dark:border-[#1F2937] rounded-[10px]">
               Cancelar
             </Button>
-            <Button onClick={handleConfirmarSolicitud}>Registrar</Button>
+            <Button onClick={handleConfirmarSolicitud} className="h-[42px] bg-blue-600 hover:bg-blue-700 text-white rounded-[10px] shadow-sm">
+              Continuar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Alert Dialog de Confirmación */}
-      <AlertDialog
-        open={showConfirmDialog}
-        onOpenChange={setShowConfirmDialog}
-      >
-        <AlertDialogContent>
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent className="bg-white dark:bg-[#111827] border-[#E5E7EB] dark:border-[#1F2937]">
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              ¿Está seguro de registrar esta devolución?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción registrará la devolución del producto y quedará
-              pendiente hasta la fecha de recepción programada.
+            <AlertDialogTitle className="text-[#111827] dark:text-white">Confirmar Devolución</AlertDialogTitle>
+            <AlertDialogDescription className="text-[#6B7280] dark:text-[#9CA3AF]">
+              Esta acción registrará la devolución del producto y quedará pendiente hasta su confirmación final.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleRegistrarDevolucion}>
-              Confirmar
+            <AlertDialogCancel className="border-[#E5E7EB] dark:border-[#1F2937]">Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleRegistrarDevolucion} className="bg-blue-600 hover:bg-blue-700 text-white">
+              Confirmar Registro
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </SidebarProvider>
   );
 };
 
