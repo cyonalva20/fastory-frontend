@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
+import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import ForgotPassword from "./pages/ForgotPassword";
 import NewProduct from "./pages/NewProduct";
@@ -17,6 +18,7 @@ import Movements from "./pages/Movements";
 import ManageUsers from "./pages/ManageUsers";
 import CurrentInventoryReport from "./pages/CurrentInventoryReport";
 import NotFound from "./pages/NotFound";
+import AuditLog from "./pages/AuditLog";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SubscriptionPanel from "./pages/SubscriptionPanel";
 
@@ -30,6 +32,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           {/* --- RUTA PÚBLICA --- */}
+          <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
 
@@ -37,7 +40,7 @@ const App = () => (
           
           {/* Nivel 1: Acceso Universal (Admin, Vendedor, Supervisor, Almacenero) */}
           <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<Index />} /> {/* Panel Principal */}
+            <Route path="/dashboard" element={<Index />} /> {/* Panel Principal */}
             <Route path="/suscripcion" element={<SubscriptionPanel />} />
           </Route>
 
@@ -61,6 +64,7 @@ const App = () => (
             <Route path="/administrar-categorias" element={<ManageCategories />} />
             <Route path="/administrar-proveedores" element={<ManageProveedores />} />
             <Route path="/administrar-usuarios" element={<ManageUsers />} />
+            <Route path="/auditoria" element={<AuditLog />} />
           </Route>
 
           {/* Ruta por defecto para URLs no encontradas */}

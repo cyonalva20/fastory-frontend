@@ -39,6 +39,19 @@ export const AuthService = {
       if (response.token) {
         localStorage.setItem("token", response.token);
 
+        // Extraer nombreEmpresa del JWT
+        try {
+          const payloadBase64 = response.token.split('.')[1];
+          const payload = JSON.parse(atob(payloadBase64));
+          if (payload.nombreEmpresa) {
+            localStorage.setItem("fastory-empresa", payload.nombreEmpresa);
+          } else {
+            localStorage.setItem("fastory-empresa", "Mi Bodega");
+          }
+        } catch (e) {
+          localStorage.setItem("fastory-empresa", "Mi Bodega");
+        }
+
         // 🔸 Guardar información del usuario si está disponible
         if (response.idUsuario && response.rol) {
           const userData = {
@@ -83,6 +96,7 @@ export const AuthService = {
   logout: (): void => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    localStorage.removeItem("fastory-empresa");
   },
 
   /**

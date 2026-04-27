@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Button } from "../components/ui/button";
 import { toast } from "sonner";
 import Sidebar from "../components/Sidebar";
+import { SidebarProvider } from "@/components/SidebarContext";
 import { MapPin, Package, Grid } from "lucide-react";
 import {
   RepisaDetalle,
@@ -53,6 +54,7 @@ const AssignLocation = () => {
   };
 
   return (
+    <SidebarProvider>
     <div className="min-h-screen bg-background flex">
       <div className="flex flex-1">
         <Sidebar activeSection="asignar-ubicacion" />
@@ -133,7 +135,8 @@ const AssignLocation = () => {
         </main>
       </div>
 
-    </div>
+    </div>  </SidebarProvider>
+
   );
 };
 

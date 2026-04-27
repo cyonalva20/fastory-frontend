@@ -16,6 +16,7 @@ export default {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         outfit: ['Outfit', 'system-ui', 'sans-serif'],
+        poppins: ['Poppins', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -96,6 +97,10 @@ export default {
           "0%, 100%": { boxShadow: "0 0 8px hsl(220 70% 55% / 0.2)" },
           "50%": { boxShadow: "0 0 20px hsl(220 70% 55% / 0.35)" },
         },
+        "data-flow": {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(400%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -103,6 +108,7 @@ export default {
         "fade-in": "fade-in 0.4s ease-out forwards",
         "slide-up": "slide-up 0.5s ease-out forwards",
         "glow-pulse": "glow-pulse 2s ease-in-out infinite",
+        "data-flow": "data-flow 2s ease-in-out infinite",
       },
     },
   },

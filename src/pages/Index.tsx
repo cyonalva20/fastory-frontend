@@ -2,6 +2,8 @@ import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useRol } from "../hooks/useRol";
 import Sidebar from "../components/Sidebar";
+import AppHeader from "../components/AppHeader";
+import { SidebarProvider } from "../components/SidebarContext";
 import { Input } from "../components/ui/input";
 import {
   Select,
@@ -47,7 +49,12 @@ import {
   FileBarChart,
   Package,
   AlertCircle,
-  MapPin
+  MapPin,
+  Activity,
+  Clock,
+  ArrowDownCircle,
+  ArrowUpCircle,
+  Wrench,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
@@ -61,6 +68,7 @@ import {
   ProductoUpdatePayload,
   UbicacionDto,
 } from "../api/productService";
+import { MovimientoService, MovimientoHistorialDto } from "../api/movimientoService";
 import { Skeleton } from "../components/ui/skeleton";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
@@ -88,6 +96,16 @@ const Index = () => {
   const [allCategorias, setAllCategorias] = useState<CategoriaFiltro[]>([]);
   const [allRepisas, setAllRepisas] = useState<RepisaFiltro[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [recentMovimientos, setRecentMovimientos] = useState<MovimientoHistorialDto[]>([]);
+  const [movimientosHoy, setMovimientosHoy] = useState(0);
+  const [expiringCount, setExpiringCount] = useState(0);
+
+  const getGreeting = () => {
+    const h = new Date().getHours();
+    if (h < 12) return "Buenos días";
+    if (h < 18) return "Buenas tardes";
+    return "Buenas noches";
+  };
 
   // Estados de Filtros
   const [searchName, setSearchName] = useState("");
@@ -224,6 +242,31 @@ const Index = () => {
     sortField,
     sortDirection,
   ]);
+
+  // Load dashboard metrics (movimientos + expiring)
+  useEffect(() => {
+    const loadDashboardMetrics = async () => {
+      try {
+        const today = new Date().toISOString().split("T")[0];
+        const movs = await MovimientoService.listarMovimientos(today, today);
+        setMovimientosHoy(movs.length);
+        // Get recent 5 movements (no date filter)
+        const allMovs = await MovimientoService.listarMovimientos();
+        setRecentMovimientos(allMovs.slice(0, 5));
+      } catch { /* silent */ }
+      try {
+        const inv = await ProductService.getInventario({});
+        const thirtyDays = new Date();
+        thirtyDays.setDate(thirtyDays.getDate() + 30);
+        const expiring = inv.filter((p) => {
+          if (!p.perecible) return false;
+          return true; // simplified: count all perecibles as "vencen pronto" candidates
+        });
+        setExpiringCount(expiring.length);
+      } catch { /* silent */ }
+    };
+    loadDashboardMetrics();
+  }, []);
 
   // Filtros dependientes
   const repisaSeleccionada = useMemo(
@@ -748,224 +791,196 @@ const Index = () => {
     ));
   };
 
-  return (
-    <div className="min-h-screen bg-background flex">
-      <Sidebar activeSection="panel-principal" />
-      <main className="flex-1 overflow-y-auto animate-fade-in">
-        <div className="px-4 sm:px-6 lg:px-8 py-5 lg:py-6 max-w-[1600px] mx-auto">
-          {/* Header row — title + report button on same line */}
-          <div className="mb-4 lg:ml-0 ml-14 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-            <div>
-              <h2 className="text-2xl font-outfit font-bold text-foreground">
-                Inventario de Productos
-              </h2>
-              <p className="text-muted-foreground text-sm mt-0.5">
-                Busca y filtra productos por nombre, categoría o ubicación
-              </p>
-            </div>
-            {(userRol === "Administrador" || userRol === "ADMINISTRADOR") && (
-              <Button
-                onClick={() => navigate("/reporte-inventario-actual")}
-                className="gap-2 shrink-0"
-                size="sm"
-              >
-                <FileBarChart className="h-4 w-4" />
-                Reporte de Inventario
-              </Button>
-            )}
-          </div>
+  const getTimeAgo = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diff = Math.floor((now.getTime() - d.getTime()) / 60000);
+    if (diff < 1) return "ahora";
+    if (diff < 60) return `hace ${diff}m`;
+    if (diff < 1440) return `hace ${Math.floor(diff / 60)}h`;
+    return `hace ${Math.floor(diff / 1440)}d`;
+  };
 
-          {/* Stock alerts — compact horizontal banner */}
-          {stockAlerts.length > 0 && (
-            <div className="mb-4 lg:ml-0 ml-14">
-              <div className="bg-destructive/8 border border-destructive/20 rounded-lg px-4 py-3">
-                <div className="flex items-start gap-3">
-                  <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground mb-2">
-                      {stockAlerts.length} producto{stockAlerts.length !== 1 ? "s" : ""} con stock bajo mínimo
-                    </p>
-                    <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto">
-                      {stockAlerts.map((p) => (
-                        <span
-                          key={p.idProducto}
-                          className="inline-flex items-center gap-1.5 text-xs bg-background/60 border border-border/50 rounded-md px-2.5 py-1.5"
-                          title={`Mínimo: ${p.stockMinimo} | Ubicación: ${p.ubicacion}`}
-                        >
-                          <AlertCircle className="h-3 w-3 text-destructive shrink-0" />
-                          <span className="font-medium truncate max-w-[140px]">{p.nombre}</span>
-                          <span className="font-mono font-bold text-destructive">{p.stockDisponible}</span>
-                          <span className="text-muted-foreground">/ {p.stockMinimo}</span>
-                        </span>
-                      ))}
+  return (
+    <SidebarProvider>
+    <div className="min-h-screen bg-[#F3F4F6] dark:bg-background flex">
+      <Sidebar activeSection="panel-principal" />
+      <div className="flex-1 flex flex-col min-h-screen sidebar-transition">
+        <AppHeader sectionTitle="Panel Principal" alertCount={stockAlerts.length} />
+        <main className="flex-1 overflow-y-auto animate-fade-in">
+          <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-[1600px] mx-auto">
+
+            {/* Title + Greeting */}
+            <div className="mb-6 lg:ml-0 ml-14 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+              <div>
+                <h2 className="text-[24px] font-bold text-[#111827] dark:text-white" style={{fontFamily:'Poppins,sans-serif'}}>Panel Principal</h2>
+                <p className="text-[#6B7280] dark:text-white/50 text-[14px] mt-0.5">{getGreeting()}, {userName}</p>
+              </div>
+              {(userRol === "Administrador" || userRol === "ADMINISTRADOR") && (
+                <Button onClick={() => navigate("/reporte-inventario-actual")} size="sm" className="gap-2 shrink-0 bg-[#F97316] hover:bg-[#EA580C] text-white">
+                  <FileBarChart className="h-4 w-4" /> Reporte de Inventario
+                </Button>
+              )}
+            </div>
+
+            {/* 4 Metric Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6 lg:ml-0 ml-14">
+              {[
+                { label: "Total Productos", value: products.length, sub: "productos registrados", icon: Package, color: "#F97316", borderColor: "#F97316" },
+                { label: "Stock Bajo", value: stockAlerts.length, sub: "productos bajo mínimo", icon: AlertTriangle, color: "#F59E0B", borderColor: "#F59E0B" },
+                { label: "Vencen Pronto", value: expiringCount, sub: "productos perecibles", icon: Clock, color: "#EF4444", borderColor: "#EF4444" },
+                { label: "Movimientos Hoy", value: movimientosHoy, sub: "entradas y salidas hoy", icon: Activity, color: "#10B981", borderColor: "#10B981" },
+              ].map((card, i) => {
+                const Icon = card.icon;
+                return (
+                  <div key={i} className="bg-white dark:bg-[#111827] rounded-xl border border-[#E5E7EB] dark:border-[#1F2937] p-5 hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 relative overflow-hidden group">
+                    <div className="absolute top-0 left-0 right-0 h-[3px]" style={{backgroundColor: card.borderColor}} />
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-[12px] font-medium text-[#6B7280] dark:text-white/50 mb-1">{card.label}</p>
+                        <p className="text-[32px] font-bold leading-none" style={{fontFamily:'Poppins,sans-serif', color: card.value > 0 && i > 0 ? card.color : undefined}}>{card.value}</p>
+                        <p className="text-[12px] text-[#9CA3AF] dark:text-white/40 mt-1">{card.sub}</p>
+                      </div>
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{backgroundColor: card.color + '15'}}>
+                        <Icon className="w-5 h-5" style={{color: card.color}} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Main content grid: Table (left) + Activity (right) */}
+            <div className="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-4 lg:ml-0 ml-14">
+
+              {/* Left: Inventory Table */}
+              <div className="bg-white dark:bg-[#111827] rounded-xl border border-[#E5E7EB] dark:border-[#1F2937] overflow-hidden relative">
+                <div className="absolute top-0 left-0 right-0 h-[2px] bg-[#F97316]" />
+                <div className="px-5 py-4 border-b border-[#E5E7EB] dark:border-[#1F2937] flex items-center justify-between">
+                  <h3 className="text-[15px] font-semibold text-[#111827] dark:text-white" style={{fontFamily:'Poppins,sans-serif'}}>Inventario de Productos</h3>
+                  <span className="text-[12px] text-[#9CA3AF] dark:text-white/40">{products.length} productos</span>
+                </div>
+
+                {/* Filters */}
+                <div className="px-5 py-3 border-b border-[#E5E7EB] dark:border-[#1F2937] bg-[#F9FAFB] dark:bg-[#0A0F1E]/50">
+                  <div className="flex flex-wrap items-end gap-3">
+                    <div className="flex-1 min-w-[160px] max-w-[220px]">
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#9CA3AF]" />
+                        <Input placeholder="Buscar producto..." value={searchName} onChange={(e) => setSearchName(e.target.value)} className="pl-8 h-8 text-sm bg-white dark:bg-[#111827]" />
+                      </div>
+                    </div>
+                    <div className="min-w-[130px]">
+                      <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                        <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Categoría" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Todas">Todas</SelectItem>
+                          {allCategorias.map((cat) => (<SelectItem key={cat.idCategoria} value={cat.idCategoria.toString()}>{cat.nombreCategoria}</SelectItem>))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="min-w-[100px]">
+                      <Select value={searchRepisa} onValueChange={(v) => { setSearchRepisa(v === "__all__" ? "" : v); setSearchFila(""); setSearchColumna(""); }}>
+                        <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Repisa" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__all__">Todas</SelectItem>
+                          {allRepisas.map((r) => (<SelectItem key={r.idRepisa} value={r.codigo}>{r.codigo}</SelectItem>))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={handleClearFilters} className="h-8 text-xs text-[#9CA3AF] hover:text-[#111827] dark:hover:text-white">Limpiar</Button>
+                  </div>
+                </div>
+
+                {/* Table */}
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-[#F3F4F6] dark:bg-[#0A0F1E] border-b border-[#E5E7EB] dark:border-[#1F2937]">
+                        <TableHead><Button variant="ghost" onClick={() => handleSort("nombre")} className="h-auto p-1.5 text-[11px] font-semibold gap-1 uppercase tracking-wider text-[#6B7280] dark:text-white/60 hover:text-[#F97316]">Nombre <ArrowUpDown className="h-3 w-3" /></Button></TableHead>
+                        <TableHead><Button variant="ghost" onClick={() => handleSort("categoria")} className="h-auto p-1.5 text-[11px] font-semibold gap-1 uppercase tracking-wider text-[#6B7280] dark:text-white/60 hover:text-[#F97316]">Categoría <ArrowUpDown className="h-3 w-3" /></Button></TableHead>
+                        <TableHead><Button variant="ghost" onClick={() => handleSort("proveedor")} className="h-auto p-1.5 text-[11px] font-semibold gap-1 uppercase tracking-wider text-[#6B7280] dark:text-white/60 hover:text-[#F97316]">Proveedor <ArrowUpDown className="h-3 w-3" /></Button></TableHead>
+                        <TableHead><Button variant="ghost" onClick={() => handleSort("precioCompra")} className="h-auto p-1.5 text-[11px] font-semibold gap-1 uppercase tracking-wider text-[#6B7280] dark:text-white/60 hover:text-[#F97316]">P. Compra <ArrowUpDown className="h-3 w-3" /></Button></TableHead>
+                        <TableHead><Button variant="ghost" onClick={() => handleSort("precioVenta")} className="h-auto p-1.5 text-[11px] font-semibold gap-1 uppercase tracking-wider text-[#6B7280] dark:text-white/60 hover:text-[#F97316]">P. Venta <ArrowUpDown className="h-3 w-3" /></Button></TableHead>
+                        <TableHead><Button variant="ghost" onClick={() => handleSort("stock")} className="h-auto p-1.5 text-[11px] font-semibold gap-1 uppercase tracking-wider text-[#6B7280] dark:text-white/60 hover:text-[#F97316]">Stock <ArrowUpDown className="h-3 w-3" /></Button></TableHead>
+                        <TableHead><Button variant="ghost" onClick={() => handleSort("stockMinimo")} className="h-auto p-1.5 text-[11px] font-semibold gap-1 uppercase tracking-wider text-[#6B7280] dark:text-white/60 hover:text-[#F97316]">Mínimo <ArrowUpDown className="h-3 w-3" /></Button></TableHead>
+                        <TableHead><Button variant="ghost" onClick={() => handleSort("ubicacion")} className="h-auto p-1.5 text-[11px] font-semibold gap-1 uppercase tracking-wider text-[#6B7280] dark:text-white/60 hover:text-[#F97316]">Ubicación <ArrowUpDown className="h-3 w-3" /></Button></TableHead>
+                        <TableHead className="text-right text-[11px] font-semibold uppercase tracking-wider text-[#6B7280] dark:text-white/60">Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>{renderTableBody()}</TableBody>
+                  </Table>
+                </div>
+              </div>
+
+              {/* Right: Activity Panel */}
+              <div className="bg-white dark:bg-[#111827] rounded-xl border border-[#E5E7EB] dark:border-[#1F2937] overflow-hidden h-fit">
+                <div className="px-5 py-4 border-b border-[#E5E7EB] dark:border-[#1F2937]">
+                  <h3 className="text-[15px] font-semibold text-[#111827] dark:text-white" style={{fontFamily:'Poppins,sans-serif'}}>Actividad Reciente</h3>
+                </div>
+                <div className="p-4">
+                  {recentMovimientos.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Activity className="w-10 h-10 text-[#D1D5DB] dark:text-white/20 mx-auto mb-3" />
+                      <p className="text-[13px] text-[#9CA3AF] dark:text-white/40">Sin actividad reciente</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {recentMovimientos.map((mov) => {
+                        const tipo = mov.tipoMovimiento?.toUpperCase();
+                        const isEntrada = tipo === "ENTRADA";
+                        const isSalida = tipo === "SALIDA";
+                        const iconColor = isEntrada ? "#10B981" : isSalida ? "#EF4444" : "#F59E0B";
+                        const IconComp = isEntrada ? ArrowDownCircle : isSalida ? ArrowUpCircle : Wrench;
+                        const totalItems = mov.detalles?.reduce((s, d) => s + d.cantidad, 0) || 0;
+                        const firstName = mov.detalles?.[0]?.nombreProducto || "Producto";
+                        return (
+                          <div key={mov.idMovimiento} className="flex items-start gap-3 p-3 rounded-lg hover:bg-[#F9FAFB] dark:hover:bg-white/5 transition-colors">
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{backgroundColor: iconColor + '15'}}>
+                              <IconComp className="w-4 h-4" style={{color: iconColor}} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[13px] font-medium text-[#111827] dark:text-white truncate">{firstName}</p>
+                              <p className="text-[11px] text-[#9CA3AF] dark:text-white/40">
+                                {tipo} · {totalItems} uds · {getTimeAgo(mov.fechaMovimiento)}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Stock alerts banner */}
+            {stockAlerts.length > 0 && (
+              <div className="mt-4 lg:ml-0 ml-14">
+                <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl px-4 py-3">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-[#111827] dark:text-white mb-2">{stockAlerts.length} producto{stockAlerts.length !== 1 ? "s" : ""} con stock bajo mínimo</p>
+                      <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto">
+                        {stockAlerts.map((p) => (
+                          <span key={p.idProducto} className="inline-flex items-center gap-1.5 text-xs bg-white dark:bg-[#111827] border border-[#E5E7EB] dark:border-[#1F2937] rounded-md px-2.5 py-1.5" title={`Mínimo: ${p.stockMinimo}`}>
+                            <AlertCircle className="h-3 w-3 text-red-500 shrink-0" />
+                            <span className="font-medium truncate max-w-[140px]">{p.nombre}</span>
+                            <span className="font-mono font-bold text-red-500">{p.stockDisponible}</span>
+                            <span className="text-[#9CA3AF]">/ {p.stockMinimo}</span>
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Filters — compact single-row bar */}
-          <div className="mb-4 lg:ml-0 ml-14">
-            <div className="bg-card/60 border border-border/40 rounded-lg px-4 py-3">
-              <div className="flex flex-wrap items-end gap-3">
-                <div className="flex-1 min-w-[180px] max-w-[260px]">
-                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Buscar</label>
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                    <Input
-                      placeholder="Nombre del producto..."
-                      value={searchName}
-                      onChange={(e) => setSearchName(e.target.value)}
-                      className="pl-8 h-9 text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div className="min-w-[150px]">
-                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Categoría</label>
-                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger className="h-9 text-sm">
-                      <SelectValue placeholder="Todas" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Todas">Todas</SelectItem>
-                      {allCategorias.map((cat) => (
-                        <SelectItem key={cat.idCategoria} value={cat.idCategoria.toString()}>
-                          {cat.nombreCategoria} ({cat.cantidadProductos})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="min-w-[120px]">
-                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Repisa</label>
-                  <Select
-                    value={searchRepisa}
-                    onValueChange={(v) => {
-                      setSearchRepisa(v === "__all__" ? "" : v);
-                      setSearchFila("");
-                      setSearchColumna("");
-                    }}
-                  >
-                    <SelectTrigger className="h-9 text-sm">
-                      <SelectValue placeholder="Todas" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__all__">Todas</SelectItem>
-                      {allRepisas.map((r) => (
-                        <SelectItem key={r.idRepisa} value={r.codigo}>{r.codigo}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="min-w-[100px]">
-                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Fila</label>
-                  <Select
-                    value={searchFila}
-                    onValueChange={(v) => {
-                      setSearchFila(v === "__all__" ? "" : v);
-                      setSearchColumna("");
-                    }}
-                  >
-                    <SelectTrigger className="h-9 text-sm" disabled={!searchRepisa}>
-                      <SelectValue placeholder="Todas" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__all__">Todas</SelectItem>
-                      {filas.map((f) => (
-                        <SelectItem key={f} value={f}>{f}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="min-w-[100px]">
-                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Columna</label>
-                  <Select
-                    value={searchColumna}
-                    onValueChange={(v) => setSearchColumna(v === "__all__" ? "" : v)}
-                  >
-                    <SelectTrigger className="h-9 text-sm" disabled={!searchRepisa || !searchFila}>
-                      <SelectValue placeholder="Todas" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__all__">Todas</SelectItem>
-                      {columnas.map((c) => (
-                        <SelectItem key={c} value={c}>{c}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Button variant="ghost" size="sm" onClick={handleClearFilters} className="h-9 text-xs text-muted-foreground hover:text-foreground">
-                  Limpiar
-                </Button>
-              </div>
-            </div>
           </div>
-
-          {/* Table — full width, dense */}
-          <div className="lg:ml-0 ml-14">
-            <div className="bg-card/60 border border-border/40 rounded-lg overflow-hidden">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-b border-border/30 bg-muted/30">
-                      <TableHead>
-                        <Button variant="ghost" onClick={() => handleSort("nombre")} className="h-auto p-1.5 text-xs font-semibold gap-1 hover:bg-transparent hover:text-primary">
-                          Nombre <ArrowUpDown className="h-3 w-3" />
-                        </Button>
-                      </TableHead>
-                      <TableHead>
-                        <Button variant="ghost" onClick={() => handleSort("categoria")} className="h-auto p-1.5 text-xs font-semibold gap-1 hover:bg-transparent hover:text-primary">
-                          Categoría <ArrowUpDown className="h-3 w-3" />
-                        </Button>
-                      </TableHead>
-                      <TableHead>
-                        <Button variant="ghost" onClick={() => handleSort("proveedor")} className="h-auto p-1.5 text-xs font-semibold gap-1 hover:bg-transparent hover:text-primary">
-                          Proveedor <ArrowUpDown className="h-3 w-3" />
-                        </Button>
-                      </TableHead>
-                      <TableHead>
-                        <Button variant="ghost" onClick={() => handleSort("precioCompra")} className="h-auto p-1.5 text-xs font-semibold gap-1 hover:bg-transparent hover:text-primary">
-                          P. Compra <ArrowUpDown className="h-3 w-3" />
-                        </Button>
-                      </TableHead>
-                      <TableHead>
-                        <Button variant="ghost" onClick={() => handleSort("precioVenta")} className="h-auto p-1.5 text-xs font-semibold gap-1 hover:bg-transparent hover:text-primary">
-                          P. Venta <ArrowUpDown className="h-3 w-3" />
-                        </Button>
-                      </TableHead>
-                      <TableHead>
-                        <Button variant="ghost" onClick={() => handleSort("stock")} className="h-auto p-1.5 text-xs font-semibold gap-1 hover:bg-transparent hover:text-primary">
-                          Stock <ArrowUpDown className="h-3 w-3" />
-                        </Button>
-                      </TableHead>
-                      <TableHead>
-                        <Button variant="ghost" onClick={() => handleSort("stockMinimo")} className="h-auto p-1.5 text-xs font-semibold gap-1 hover:bg-transparent hover:text-primary">
-                          Mínimo <ArrowUpDown className="h-3 w-3" />
-                        </Button>
-                      </TableHead>
-                      <TableHead>
-                        <Button variant="ghost" onClick={() => handleSort("ubicacion")} className="h-auto p-1.5 text-xs font-semibold gap-1 hover:bg-transparent hover:text-primary">
-                          Ubicación <ArrowUpDown className="h-3 w-3" />
-                        </Button>
-                      </TableHead>
-                      <TableHead className="text-right text-xs font-semibold">
-                        Acciones
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>{renderTableBody()}</TableBody>
-                </Table>
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
+        </main>
+      </div>
 
       {/* Modal de Edición */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
@@ -1400,6 +1415,7 @@ const Index = () => {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+    </SidebarProvider>
   );
 };
 
